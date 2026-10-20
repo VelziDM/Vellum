@@ -182,39 +182,9 @@ export function initProfile() {
             lastTrackerState: "",
             planMessageIndex: null
         },
-        imageGen: {
-            enabled: false,
-            generatorBackend: "direct",
-            injectMode: "inline",
-            imageCount: 1,
-            comfyUrl: "http://127.0.0.1:8188",
-            currentWorkflowName: "",
-            selectedModel: "",
-            selectedLora: "", selectedLora2: "", selectedLora3: "", selectedLora4: "",
-            selectedLoraWt: 1.0, selectedLoraWt2: 1.0, selectedLoraWt3: 1.0, selectedLoraWt4: 1.0,
-            imgWidth: 1024, imgHeight: 1024,
-            customNegative: "bad quality, blurry, worst quality, low quality",
-            customSeed: -1,
-            selectedSampler: "euler",
-            compressImages: true,
-            steps: 20, cfg: 7.0, denoise: 0.5, clipSkip: 1,
-            // "classic" (the tab as before task 001) or "v2" (plan 006). New installs
-            // start on V2; a profile saved before the switch existed stays Classic.
-            engine: "v2",
-            v2: { style: "tags", shot: "cinematic", extra: "", method: "placeholders" },
-            promptTemplate: "illus_cinematic",
-            includeExamples: true,
-            directLanguage: false,
-            injectNpcTags: false,
-            promptExtra: "",
-            triggerMode: "always",
-            autoGenFreq: 1,
-            previewPrompt: false,
-            savedWorkflowStates: {},
-            customPrompts: null,
-            customPromptsEnabled: false,
-            characterTags: {}
-        },
+        // ponytail: image gen removed — the key is simply not created any more.
+        // Old profiles may still carry an imageGen object; every reader left is
+        // null-guarded, and the dead object is inert.
         memoryCore: {
             enabled: false,
             architecture: "raw_short_long", // "raw_short_long" or "raw_long"
@@ -254,7 +224,6 @@ export function initProfile() {
                 storyPlan: true,
                 npc: true,
                 banList: true,
-                imageGen: true,
                 styleGen: true,
                 // Off by default: when on, every reply costs one extra worker call.
                 worldState: false,
@@ -355,38 +324,6 @@ export function initProfile() {
     });
     if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
     if (!localProfile.v9Limits) localProfile.v9Limits = defaults.v9Limits;
-    if (!localProfile.imageGen) localProfile.imageGen = defaults.imageGen;
-    if (localProfile.imageGen.engine === undefined) localProfile.imageGen.engine = "classic";
-    if (localProfile.imageGen.autoPlacement === undefined) localProfile.imageGen.autoPlacement = "end";
-    if (!localProfile.imageGen.v2 || typeof localProfile.imageGen.v2 !== "object") {
-        localProfile.imageGen.v2 = { style: "tags", shot: "cinematic", extra: "", method: "placeholders" };
-    }
-    if (localProfile.imageGen.v2.method === undefined) localProfile.imageGen.v2.method = "placeholders";
-    if (localProfile.imageGen.directLanguage === undefined) localProfile.imageGen.directLanguage = false;
-    if (localProfile.imageGen.imageCount === undefined) localProfile.imageGen.imageCount = 1;
-    if (localProfile.imageGen.promptPrefix === undefined) localProfile.imageGen.promptPrefix = "";
-    if (localProfile.imageGen.loraTrigger1 === undefined) localProfile.imageGen.loraTrigger1 = "";
-    if (localProfile.imageGen.loraTrigger2 === undefined) localProfile.imageGen.loraTrigger2 = "";
-    if (localProfile.imageGen.loraTrigger3 === undefined) localProfile.imageGen.loraTrigger3 = "";
-    if (localProfile.imageGen.loraTrigger4 === undefined) localProfile.imageGen.loraTrigger4 = "";
-    if (localProfile.imageGen.loraTriggersMap === undefined) localProfile.imageGen.loraTriggersMap = {};
-    if (localProfile.imageGen.promptStyle !== undefined) {
-        let style = localProfile.imageGen.promptStyle; 
-        let persp = localProfile.imageGen.promptPerspective;
-
-        if (style === "standard") style = "sdxl"; // Fallback standard to sdxl
-
-        if (style === "illustrious" && persp === "pov") localProfile.imageGen.promptTemplate = "illus_pov";
-        else if (style === "illustrious" && persp === "character") localProfile.imageGen.promptTemplate = "illus_portrait";
-        else if (style === "illustrious") localProfile.imageGen.promptTemplate = "illus_cinematic";
-        else if (persp === "pov") localProfile.imageGen.promptTemplate = "sdxl_pov";
-        else if (persp === "character") localProfile.imageGen.promptTemplate = "sdxl_portrait";
-        else localProfile.imageGen.promptTemplate = "sdxl_cinematic";
-
-        delete localProfile.imageGen.promptStyle;
-        delete localProfile.imageGen.promptPerspective;
-    }
-    if (localProfile.imageGen.includeExamples === undefined) localProfile.imageGen.includeExamples = true;
     if (!localProfile.storyPlan) localProfile.storyPlan = defaults.storyPlan;
     // Story Director migration: add new fields to existing profiles
     if (localProfile.storyPlan) {
@@ -404,7 +341,6 @@ export function initProfile() {
     }
     if (localProfile.npcBank && localProfile.npcBank.scanDepth === undefined) localProfile.npcBank.scanDepth = 60;
     if (localProfile.banListCustomPromptsEnabled === undefined) localProfile.banListCustomPromptsEnabled = false;
-    if (localProfile.imageGen.injectNpcTags === undefined) localProfile.imageGen.injectNpcTags = false;
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
     if (!localProfile.storyConfig) localProfile.storyConfig = JSON.parse(JSON.stringify(defaults.storyConfig));
     Object.keys(defaults.storyConfig).forEach(k => {
@@ -429,7 +365,6 @@ export function initProfile() {
     // The block is always injected now, so its three standing fields ship set rather
     // than blank. Only fills what is empty, so a reader who picked something keeps it.
     applyStoryConfigDefaults(localProfile.storyConfig);
-    if (localProfile.imageGen && localProfile.imageGen.customPromptsEnabled === undefined) localProfile.imageGen.customPromptsEnabled = false;
     if (localProfile.memoryCore && localProfile.memoryCore.customPromptsEnabled === undefined) localProfile.memoryCore.customPromptsEnabled = false;
     if (localProfile.npcBank && localProfile.npcBank.customPromptsEnabled === undefined) localProfile.npcBank.customPromptsEnabled = false;
     if (localProfile.npcBank && localProfile.npcBank.oocTrigger === undefined) localProfile.npcBank.oocTrigger = false;
@@ -513,7 +448,6 @@ export function initProfile() {
                 storyPlan: true,
                 npc: true,
                 banList: true,
-                imageGen: true,
                 styleGen: true,
                 // Off by default: when on, every reply costs one extra worker call.
                 worldState: false
@@ -607,8 +541,7 @@ export function initProfile() {
     const metaHadOnEntry = {
         memory: !!(chat_metadata && chat_metadata["megumin_memory_core"]),
         plan: !!(chat_metadata && chat_metadata["megumin_story_plan"]),
-        npcs: !!(chat_metadata && chat_metadata["megumin_npc_bank"]),
-        charTags: !!(chat_metadata && chat_metadata["megumin_character_tags"])
+        npcs: !!(chat_metadata && chat_metadata["megumin_npc_bank"])
     };
 
     if (chat_metadata && chat_metadata["megumin_memory_core"]) {
@@ -650,23 +583,9 @@ export function initProfile() {
         saveMetadata();
     }
 
-    // --- LOAD CHARACTER TAGS FROM CHAT METADATA ---
-    if (chat_metadata && chat_metadata["megumin_character_tags"]) {
-        if (localProfile.imageGen) {
-            localProfile.imageGen.characterTags = chat_metadata["megumin_character_tags"].characterTags || {};
-        }
-    } else if (localProfile.imageGen) {
-        // No looks in this chat yet: it starts with none. Looks were never kept in
-        // settings.json except by a one-day Beta build whose global sync copied one
-        // chat's looks into every profile; seeding from there put an old story's
-        // characters into every new chat (dropLookResidue clears them).
-        localProfile.imageGen.characterTags = {};
-    }
-
-    // The three blocks above are still a migration SOURCE: a chat opened for the first
-    // time since chat_metadata became the home for this data has its only copy sitting in
-    // settings.json. That residue is the other half of what makes settings.json large, so
-    // it is dropped once the chat's own metadata is confirmed to carry the data.
+    // A chat-level profile whose only copy of its data sits in settings.json has
+    // dropped it behind chat_metadata, so the residue there is dead weight and
+    // gets freed once the chat's own metadata is confirmed to carry it.
     //
     // Only the exact chat-level key is touched. A character-level profile is shared by
     // every chat of that character and a parent-chat profile by every branch off it, so
@@ -693,7 +612,9 @@ export function initProfile() {
                 delete stored.npcBank.npcs;
                 freed = true;
             }
-            if (metaHadOnEntry.charTags && stored.imageGen && stored.imageGen.characterTags !== undefined) {
+            // The removed image gen's V2 look tags. Old profiles carry the
+            // orphaned key quietly; shave it off when it is actually there.
+            if (stored.imageGen && stored.imageGen.characterTags !== undefined) {
                 delete stored.imageGen.characterTags;
                 freed = true;
             }
@@ -722,7 +643,6 @@ export function initProfile() {
     } else {
         $("#ps_char_rule_label").html(`${displayName} <span class="ps-level-badge" style="background:${levelColors[saveLevel]};">${levelIcons[saveLevel]} ${levelLabels[saveLevel]}</span>`);
     }
-    fireRefreshHook(REFRESH.QUICK_GEN_BUTTON);
     fireRefreshHook(REFRESH.TOKEN_COUNT);
     pruneFutureData(); // Automatically prune out-of-bounds future data on load/initialization
     fireRefreshHook(REFRESH.MEMORY_VISUALS);
@@ -950,16 +870,9 @@ export function saveProfileToMemory() {
             chat_metadata["megumin_npc_bank"].npcs = bank.npcs || [];
         }
 
-        const charTags = localProfile.imageGen?.characterTags;
-        if (charTags && ((Object.keys(charTags).length > 0) || chat_metadata["megumin_character_tags"] !== undefined)) {
-            if (!chat_metadata["megumin_character_tags"]) chat_metadata["megumin_character_tags"] = {};
-            chat_metadata["megumin_character_tags"].characterTags = charTags || {};
-        }
-
         const hasAnyBlock = !!(chat_metadata["megumin_memory_core"]
             || chat_metadata["megumin_story_plan"]
-            || chat_metadata["megumin_npc_bank"]
-            || chat_metadata["megumin_character_tags"]);
+            || chat_metadata["megumin_npc_bank"]);
 
         if (hasAnyBlock) {
             // chat_metadata ends up holding the same array objects as localProfile, so
@@ -969,8 +882,7 @@ export function saveProfileToMemory() {
             const metaStamp = key + "|" + JSON.stringify([
                 chat_metadata["megumin_memory_core"] || null,
                 chat_metadata["megumin_story_plan"] || null,
-                chat_metadata["megumin_npc_bank"] || null,
-                chat_metadata["megumin_character_tags"] || null
+                chat_metadata["megumin_npc_bank"] || null
             ]);
             if (metaStamp !== _lastSavedMetaStamp) {
                 _lastSavedMetaStamp = metaStamp;

@@ -14,6 +14,5 @@ export {
 // the whole set.
 export { storyPlanPrompts } from "./storyPlan.js";
 export { banListPrompts } from "./banList.js";
-export { imageGenPrompts } from "./imageGen.js";
 export { memoryCorePrompts } from "./memoryCore.js";
 export { npcBankPrompts } from "./npcBank.js";

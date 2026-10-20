@@ -18,7 +18,7 @@ import {
 } from "../../engine/tasks.js";
 import { generateQuietPrompt } from "../../st.js";
 import { worldEnabled, notebookEnabled } from "../../state/index.js";
-import { card, switchRow, esc } from "../controls.js";
+import { card, esc } from "../controls.js";
 import { CHOMUSUKE_SETUP_STEPS, CHOMUSUKE_SETUP_NOTE } from "../modelGuide.js";
 
 // Folds stay as they were across redraws.
@@ -33,8 +33,7 @@ const BLOCK_ROUTES = [
     { id: "cyoa", label: "CYOA choices", icon: "fa-list-check" }
 ];
 
-// After every reply: each is a call on every reply while on (off by default,
-// except Images, which also covers the image button).
+// After every reply: each is a call on every reply while on (off by default).
 // Blocks covers World State too (it is a block in the Blocks tab): its chip is
 // the World State route, the other chips the Blocks route (plan 009).
 const PER_REPLY = [
@@ -42,9 +41,7 @@ const PER_REPLY = [
       desc: "Writes the blocks you tick after each reply, World State included. The story model stops writing them, so more of its reply goes to the story. World State is a call of its own; the other blocks share one." },
     { key: "notebook", title: "The Notebook", icon: "fa-book", color: "#8b5cf6", defaultOff: true,
       desc: "Notes the clues each reply showed, who found out a hidden truth, and what came out. The story model only writes new truths.",
-      note: "I recommend keeping this one for the story model to handle." },
-    { key: "imageGen", title: "Images", icon: "fa-image", color: "#06b6d4",
-      desc: "Writes the image prompts: the automatic images after a reply, and the image button." }
+      note: "I recommend keeping this one for the story model to handle." }
 ];
 
 // When the job runs: occasional, only when that job fires.
@@ -60,15 +57,12 @@ function ensureConfig() {
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = {
             enabled: false, profileId: "", primaryProfileId: "",
-            features: { memory: true, storyPlan: true, npc: true, banList: true, imageGen: true, styleGen: true, worldState: false },
+            features: { memory: true, storyPlan: true, npc: true, banList: true, styleGen: true, worldState: false },
         };
     }
     const cfg = localProfile.chomusuke;
     if (!cfg.features) cfg.features = {};
     if (!cfg.blockRoutes || typeof cfg.blockRoutes !== "object") cfg.blockRoutes = { bonds: true, sheet: true, chatter: true, cyoa: true };
-    if (!cfg.combine || typeof cfg.combine !== "object") cfg.combine = { all: false, worldFallback: false };
-    // One switch now; the old "World State and image" switch carries over.
-    if (cfg.combine.all === undefined) cfg.combine.all = cfg.combine.worldImage === true;
     return cfg;
 }
 
@@ -87,7 +81,6 @@ function featureOff(key) {
     switch (key) {
         case "blocks": return worldEnabled() || BLOCK_ROUTES.some(b => stack.includes(b.id)) ? null : { text: "None of these blocks are on", tab: "blocks" };
         case "notebook": return notebookEnabled() ? null : { text: "The Notebook is off", tab: "notebook" };
-        case "imageGen": return p.imageGen && p.imageGen.enabled ? null : { text: "Images are off", tab: "images" };
         case "memory": return p.memoryCore && p.memoryCore.enabled ? null : { text: "Memory is off", tab: "memory" };
         case "npc": return p.npcBank && p.npcBank.enabled ? null : { text: "NPC Bank is off", tab: "npc" };
         case "storyPlan": return p.storyPlan && p.storyPlan.enabled ? null : { text: "Story Director is off", tab: "director" };
@@ -103,13 +96,11 @@ function offChip(key) {
 /** How many Chomusuke calls a reply can cost right now. */
 function callsPerReply(cfg) {
     const stack = (localProfile.blockStack && localProfile.blockStack.order) || [];
-    const ig = localProfile.imageGen || {};
     let n = 0;
-    // World State and the other blocks are separate calls unless combined.
+    // World State and the other blocks are separate calls.
     if (worldRouted(cfg) && worldEnabled()) n++;
     if (BLOCK_ROUTES.some(b => blockRouted(cfg, b.id) && stack.includes(b.id))) n++;
     if (cfg.features.notebook === true && notebookEnabled()) n++;
-    if (cfg.features.imageGen !== false && ig.enabled && (ig.triggerMode || "always") !== "manual") n++;
     return n;
 }
 
@@ -190,14 +181,10 @@ export function renderChomusuke(c) {
 
     // ── After every reply ──
     const n = callsPerReply(cfg);
-    const combine = cfg.combine;
-    const routedPerReply = [worldRouted(cfg), cfg.features.blocks === true, cfg.features.notebook === true, cfg.features.imageGen !== false].filter(Boolean).length;
-    const combineReady = Boolean(running && routedPerReply >= 2);
     const cost = !running ? "Chomusuke is off, so none of these cost a Chomusuke call."
         : n === 0 ? "No job runs after every reply right now."
         : n === 1 ? "Each reply costs <b>1</b> Chomusuke call."
-        : combine.all && combineReady ? `Each reply costs up to <b>${n}</b> Chomusuke calls → with Combine calls on: <b>1</b>.`
-        : `Each reply costs up to <b>${n}</b> Chomusuke calls. Turn on Combine calls to make it <b>1</b>.`;
+        : `Each reply costs up to <b>${n}</b> Chomusuke calls.`;
 
     const every = card("After every reply", "Each job here is one Chomusuke call on every reply while it is on.");
     every.append(`<div class="chx-cost"><i class="fa-solid fa-receipt"></i> <span>${cost}</span></div>`);
@@ -216,29 +203,12 @@ export function renderChomusuke(c) {
                 cfg.features[feat.key] = !on;
             }
             saveProfileToMemory();
-            // Combine calls and the cost line depend on these: redraw.
+            // The cost line depends on these: redraw.
             redraw();
         });
         every.append($row);
         if (isBlocks) every.append(blockChips(cfg, redraw));
     });
-
-    // Combine calls belongs to this group.
-    every.append(`<div class="chx-sub">Combine calls ${combineReady ? "" : `<small>Needs Chomusuke on and at least two of the jobs above.</small>`}</div>`);
-    every.append(switchRow({
-        label: `<i class="fa-solid fa-layer-group" style="color:#f59e0b; margin-right: 6px;"></i> Everything in one call`,
-        desc: "After each reply, one call does every job above that is on, plus the image prompt when an image is due (on Version 2 also outfit tags and new looks). A reply that needs only one of them keeps its own call.",
-        on: combine.all === true && combineReady,
-        disabled: !combineReady,
-        onChange: on => { combine.all = on; if (!on) combine.worldFallback = false; saveProfileToMemory(); redraw(); }
-    }));
-    every.append(switchRow({
-        label: `<i class="fa-solid fa-life-ring" style="color:#10b981; margin-right: 6px;"></i> Fall back to separate reads`,
-        desc: "If the combined answer has no usable World State update, blocks or notebook lines, read the reply again for just that part (one extra call, only then). Off: the card shows it, with Read again.",
-        on: combine.worldFallback === true && combineReady && combine.all === true,
-        disabled: !(combineReady && combine.all === true),
-        onChange: on => { combine.worldFallback = on; saveProfileToMemory(); }
-    }).addClass("chx-indent"));
     c.append(every);
 
     // ── When the job runs ──

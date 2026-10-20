@@ -12,8 +12,7 @@
 
 import {
     activeStoryPlanRequest, activeNpcScanRequest, activeWorldExtractRequest, activeNpcUpdateRequest,
-    activeBanListChat, activeImageGenRequest, activeNpcPfpRequest, activeMemorySummarizationRequest,
-    activeGenerationOrder,
+    activeBanListChat, activeMemorySummarizationRequest, activeGenerationOrder,
 } from "../core/activeRequests.js";
 import { extension_settings, getContext, saveSettingsDebounced, Popup, POPUP_TYPE } from "../st.js";
 import { extensionName } from "../core/constants.js";
@@ -39,8 +38,6 @@ export function backgroundJobNow() {
     if (activeWorldExtractRequest) return activeWorldExtractRequest.job || "world";
     if (activeNpcUpdateRequest) return "npc";
     if (activeBanListChat) return "banlist";
-    if (activeImageGenRequest) return (activeImageGenRequest.v2 && activeImageGenRequest.v2.job) || "images";
-    if (activeNpcPfpRequest) return "npc";
     if (activeMemorySummarizationRequest) return "memory";
     if (activeGenerationOrder) return "style";
     return null;

@@ -10,8 +10,6 @@ export const BG_JOBS = [
     { id: "world", label: "World State" },
     { id: "blocks", label: "Blocks" },
     { id: "notebook", label: "The Notebook" },
-    { id: "combined", label: "Combined call" },
-    { id: "images", label: "Images" },
     { id: "banlist", label: "Banned Phrases" },
     { id: "director", label: "Story Director" },
     { id: "style", label: "Writing Style" }

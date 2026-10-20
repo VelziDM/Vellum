@@ -62,7 +62,6 @@ export const REFRESH = {
     MEMORY_ACCORDION: "memory:accordion",
     MEMORY_VAULT: "memory:vault",
     NPC_LIST: "npc:list",
-    QUICK_GEN_BUTTON: "imagegen:quickGenButton",
 
     // Not a redraw: tells the Memory Core its vault-retrieval cache no longer
     // matches the data behind it, after a prune has removed entries.

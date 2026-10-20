@@ -11,16 +11,12 @@ import { getContext, extension_settings, substituteParams } from "../st.js";
 import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
 import { isV7Engine, isV8Engine, isModernEngine, engineUsesRenderLimits, isCoWriterEngine, engineKeepsNotebook } from "../core/engines.js";
-import {
-    activeNpcImages, pushActiveNpcImage, clearActiveNpcImages,
-} from "../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { hardcodedLogic } from "../../data/database.js";
 import { applyEnhancedDialogue } from "../../data/modes/v10.js";
 import { buildBlocksEnvelope } from "../features/blocks/registry.js";
 import { buildConfigBlock } from "../features/storyconfig/config.js";
 import { npcBuildTextFromData } from "../features/npc/data.js";
-import { imageInjectionNpcTags, imageV2InlineInstruction, imageViaChomusuke } from "../features/imagegen/index.js";
 import { npcBuildDossierPrompt, npcBuildUpdatePrompt } from "../features/npc/fields.js";
 import { memGetCachedKeywords } from "../features/memory/keywords.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
@@ -384,7 +380,10 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[storytracker]]"] = "";
     }
 
-    // 4. FINAL INJECTIONS (Banlist & Image Gen)
+    // 4. FINAL INJECTIONS (Banlist)
+    // ponytail: image generation is cut out of this build. The anchors stay
+    // blank rather than removed so old presets carrying the tags keep rinsing
+    // clean instead of leaking a literal [[img1]] into the model's context.
     if (localProfile.banList && localProfile.banList.length > 0) {
         const banStr = localProfile.banList.map(b => `- ${b}`).join("\n");
         const banCustom = localProfile.banListCustomPromptsEnabled ? localProfile.banListCustomPrompts : null;
@@ -394,78 +393,8 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[banlist]]"] = "";
     }
 
-    if (localProfile.imageGen && localProfile.imageGen.enabled) {
-        const ig = localProfile.imageGen;
-        let shouldInject = false;
-        let conditionalText = "";
-        const mode = ig.triggerMode || "always";
-
-        if (mode === "always") shouldInject = true;
-        else if (mode === "frequency") {
-            const chat = getContext().chat || [];
-            const aiMsgCount = chat.filter(m => !m.is_user && !m.is_system).length;
-            const freq = parseInt(ig.autoGenFreq) || 1;
-            if ((aiMsgCount + 1) % freq === 0) shouldInject = true;
-        } else if (mode === "conditional") {
-            shouldInject = true;
-            conditionalText = "CRITICAL INSTRUCTION: ONLY output the <img prompt=\"...\"> tag if the character is explicitly taking a photo, sending a picture, or sharing an image in this exact moment. If not, do NOT output the image tags at all.\n\n";
-        }
-
-        // Chomusuke writes the automatic images after the reply (imagegen/auto.js),
-        // so the story model is not asked for an <img> tag at all.
-        if (imageViaChomusuke()) shouldInject = false;
-
-        if (shouldInject) {
-            const customIg = localProfile.imageGen.customPromptsEnabled ? (localProfile.imageGen.customPrompts || {}) : {};
-            const defIg = DEFAULT_PROMPTS.imageGen;
-            
-            const tmpl = ig.promptTemplate || "illus_cinematic";
-            const map = {
-                "illus_pov": ["rulesIllusPov", "examplesIllusPov"],
-                "sdxl_pov": ["rulesSdxlPov", "examplesSdxlPov"],
-                "illus_cinematic": ["rulesIllusCinematic", "examplesIllusCinematic"],
-                "sdxl_cinematic": ["rulesSdxlCinematic", "examplesSdxlCinematic"],
-                "illus_portrait": ["rulesIllusPortrait", "examplesIllusPortrait"],
-                "sdxl_portrait": ["rulesSdxlPortrait", "examplesSdxlPortrait"]
-            };
-
-            let rules = "", examples = "";
-            const keys = map[tmpl];
-            if (keys) {
-                rules = customIg[keys[0]] || defIg[keys[0]];
-                examples = customIg[keys[1]] || defIg[keys[1]];
-            }
-
-            if (!ig.includeExamples) examples = "";
-
-            const template = customIg.injectionTemplate || defIg.injectionTemplate;
-            let extraSection = ig.promptExtra ? `Extra Instructions: ${ig.promptExtra}` : "";
-            let directLangStr = ig.directLanguage ? "**DIRECT LANGUAGE:** Use exact Booru tags only. \"naked\" not \"wearing nothing.\" \"erection\" not \"visible arousal.\"\n\n**NSFW TAG REFERENCE (use when scene is explicit):**\nBody: naked, nude, topless, exposed nipples, small breasts, medium breasts, large breasts, spread legs, ass, erection, veins, veiny penis\nActions: hetero, sex, vaginal, anal, oral, fellatio, after fellatio, paizuri, straddling, riding, missionary, doggystyle, cowgirl position, moaning, open mouth, tongue out, ahegao, clenching teeth\nFluids: cum, cum on body, cum on breasts, cum on face, cum on hair, cum on tongue, cum in mouth, cum inside, ejaculation, facial, saliva, sweat\nState: flushed face, heavy breathing, trembling, crying with eyes open, half-closed eyes, solo focus" : "";
-            let npcTagsStr = imageInjectionNpcTags(); // <-- GET THE TAGS (Classic or V2)
-            const imageCountStr = ig.imageCount || 1; 
-
-            dict["[[img1]]"] = template
-                .replace('{{conditionalText}}', conditionalText)
-                .replace('{{imageCount}}', imageCountStr)
-                .replace('{{templateRules}}', rules)
-                .replace('{{promptExtra}}', extraSection)
-                .replace('{{directLanguage}}', directLangStr)
-                .replace('{{npcImageTags}}', npcTagsStr) // <-- INJECT THEM
-                .replace('{{templateExamples}}', examples);
-            
-            // Image Gen V2 has its own, shorter instruction (@Name, cast list).
-            const v2Inline = imageV2InlineInstruction({ conditionalText, imageCount: imageCountStr });
-            if (v2Inline) dict["[[img1]]"] = v2Inline;
-
-            // Set the new value for img2 dynamically based on the count!
-            dict["[[img2]]"] = ` and the ${imageCountStr} image tag`;
-        } else {
-            dict["[[img1]]"] = "";
-            dict["[[img2]]"] = "";
-        }
-    } else {
-        dict["[[img1]]"] = ""; dict["[[img2]]"] = "";
-    }
+    dict["[[img1]]"] = "";
+    dict["[[img2]]"] = "";
 
     if (localProfile.thinkingV2 && dict["[[prefill]]"]) {
         dict["[[prefill]]"] = dict["[[prefill]]"].replace(/\n<think>[\s\S]*/, "\n<think>\n<think>");
@@ -727,15 +656,6 @@ export function buildBaseDict(isTokenCount = false) {
                         npcXML += "</retrieved_npcs>";
                         
                         dict["[[npc list]]"] = `[RELEVANT NPCs]\nThe following are details of known NPCs relevant to the current context:\n${npcXML}`;
-
-                        clearActiveNpcImages();
-                        if (localProfile.npcBank.sendPortraitsToAi) {
-                            topNpcs.forEach(n => {
-                                if (n.pfp && n.pfp.startsWith("data:image")) {
-                                    pushActiveNpcImage({ name: n.name, base64: n.pfp });
-                                }
-                            });
-                        }
                     }
                 }
             }

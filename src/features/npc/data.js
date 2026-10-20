@@ -5,9 +5,6 @@
 // which is why the prompt builder can read from it without dragging the UI in.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { getContext } from "../../st.js";
-import { localProfile } from "../../core/state.js";
-import { memGetCachedKeywords } from "../memory/keywords.js";
 import { escapeRegex } from "../../utils/regex.js";
 import { npcFields, npcFieldByRole, npcBodyFields, npcVitalsFields } from "./fields.js";
 
@@ -160,42 +157,5 @@ export function npcParseBlock(rawBlock) {
 
 // Scans the chat and extracts Image Tags for relevant NPCs
 // OPTIMIZED: Pre-computes NPC text once, uses cached keywords
-// `force`: the manual image prompt includes relevant NPC tags whenever there
-// are any; the inline image instruction still follows the Inject NPC Tags toggle.
-export function getRelevantNpcImageTags({ force = false } = {}) {
-    const s = localProfile?.imageGen;
-    if (!s || (!s.injectNpcTags && !force)) return "";
-    
-    const nb = localProfile?.npcBank;
-    if (!nb || !nb.npcs || nb.npcs.length === 0) return "";
-    
-    const context = typeof getContext === 'function' ? getContext() : null;
-    if (!context || !context.chat) return "";
-
-    // Use cached keywords (shared with other TF-IDF callers in this prompt build)
-    const { keywords } = memGetCachedKeywords(context.chat, 4);
-    if (keywords.length === 0) return "";
-
-    let scoredNpcs = [];
-    // Pre-compute NPC texts ONCE instead of inside each iteration
-    nb.npcs.forEach(n => {
-        if (!n.imageTags || n.imageTags.trim() === "") return; // Skip NPCs with no image tags
-        
-        let score = 0;
-        const contentLower = npcBuildTextFromData(n).toLowerCase();
-        for (const kw of keywords) {
-            if (contentLower.includes(kw)) score++;
-        }
-        
-        if (score >= 1) {
-            scoredNpcs.push({ name: n.name, tags: n.imageTags, score: score });
-        }
-    });
-
-    if (scoredNpcs.length === 0) return "";
-    
-    scoredNpcs.sort((a, b) => b.score - a.score);
-    const topNpcs = scoredNpcs.slice(0, 3); // Grab the top 3 relevant NPCs
-    
-    return "**RELEVANT NPC IMAGE TAGS:**\n" + topNpcs.map(n => `[${n.name}]: ${n.tags}`).join("\n");
-}
+// ponytail: gone with the image pipeline; the Image Tags field on the NPC card
+// keeps loading old chats but feeds nothing. Cut the field when revisiting the bank.

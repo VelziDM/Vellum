@@ -17,7 +17,6 @@ import { saveBase64AsFile, cancelDebounce } from "../../../utils.js";
 import { humanizedDateTime } from "../../../RossAscends-mods.js";
 import { Popup, POPUP_TYPE } from "../../../popup.js";
 import { hardcodedLogic } from "./data/database.js";
-import { KAZUMA_PLACEHOLDERS, RESOLUTIONS } from "./data/image_data.js";
 
 import { extensionName, extensionFolderPath } from "./src/core/constants.js";
 import {
@@ -31,17 +30,10 @@ import {
 import {
     activeStoryPlanRequest,
     activeBanListChat,
-    activeImageGenRequest,
-    setActiveImageGenRequest,
     activeNpcScanRequest,
     setActiveNpcScanRequest,
-    activeNpcPfpRequest,
-    setActiveNpcPfpRequest,
     activeMemorySummarizationRequest,
     activeGenerationOrder,
-    activeNpcImages,
-    pushActiveNpcImage,
-    clearActiveNpcImages,
     isBackgroundGenerationActive,
 } from "./src/core/activeRequests.js";
 
@@ -62,8 +54,6 @@ import {
     refreshPresentBar,
 } from "./src/sidepanel/panel.js";
 
-import { applyBlocksToMessage, clearBlocksFromMessage, buildBlocksCard, extractBlocks } from "./src/blocks/render.js";
-
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
 import { meguminActiveDataIdentity, getCharacterKey, getRawAvatar, cleanGhostProfiles } from "./src/core/keys.js";
 import {
@@ -72,26 +62,9 @@ import {
 } from "./src/core/sync.js";
 import { cleanLegacySettings, migrateRenamedTabs, migrateUtilityPrefillFlag, dropLookResidue } from "./src/core/migrations.js";
 import { meguminCompactStoredPrompts } from "./src/prompts/storage.js";
-import {
-    normalizeBlockBody,
-    meguminActiveBlocks,
-    buildBlocksEnvelope,
-    meguminRenderRegistry,
-    meguminBlocksTakenByPanel,
-    meguminBlockById,
-    BLOCK_VISIBILITY_CHOICES,
-    blockTagFromName,
-    validateCustomBlock,
-    STAT_FIELD_PACKS,
-    STAT_FIELD_TYPES,
-} from "./src/features/blocks/registry.js";
-import { meguminCleanChatHistoryText, getChatForStoryDirector, getChatForNpcScan, escapeRegex } from "./src/engine/chatText.js";
-import { useMeguminEngine, runWithChomusuke, chomusukeSessionPromise } from "./src/engine/tasks.js";
+import { getChatForStoryDirector } from "./src/engine/chatText.js";
+import { runWithChomusuke, chomusukeSessionPromise } from "./src/engine/tasks.js";
 import { warnChomusuke, answerKind } from "./src/engine/chomusukeNotice.js";
-import { escapeHtmlAttr } from "./src/utils/html.js";
-import { downloadJsonFile } from "./src/utils/download.js";
-import { showKazumaProgress } from "./src/ui/progress.js";
-import { makeComfyClientId, openComfyProgressSocket } from "./src/features/imagegen/comfyProgress.js";
 import { renderPromptEditor } from "./src/ui/promptEditor.js";
 import { registerRefreshHook, REFRESH } from "./src/core/refreshHooks.js";
 import {
@@ -102,26 +75,18 @@ import {
     _saveProfileDebouncedInner,
     pruneFutureData,
 } from "./src/core/profile.js";
-import { meguminSyncLegacyBlockIds } from "./src/features/blocks/registry.js";
 import { blocksReadForReply, NOT_A_REPLY as BLOCKS_NOT_A_REPLY } from "./src/features/blocks/worker.js";
 import { notebookReadForReply } from "./src/features/notebook/worker.js";
-import { buildConfigBlock } from "./src/features/storyconfig/config.js";
-import { renderStoryConfig } from "./src/features/storyconfig/ui.js";
-import { SD_GENRES, renderStoryPlanner, generateStoryPlanLogic } from "./src/features/storyplan/ui.js";
-import { renderBanList } from "./src/features/banlist/ui.js";
+import { generateStoryPlanLogic } from "./src/features/storyplan/ui.js";
 import {
-    renderMemoryCore,
     memProcessPendingChunks,
     isMessageArchived,
-    memGetRelevantVaultEntries,
     updateMemoryVisuals,
 } from "./src/features/memory/index.js";
-import { memGetCachedKeywords } from "./src/features/memory/keywords.js";
 import { memUpdateSemanticQueryDebounced, memEnsureSemanticQueryFresh } from "./src/features/memory/vectordb.js";
-import { npcBuildTextFromData, npcParseBlock, meguminFindNpcDossiers, getRelevantNpcImageTags, npcCreateRecord } from "./src/features/npc/data.js";
-import { npcGeneratePfp } from "./src/features/npc/pfp.js";
-import { npcParseUpdateBlocks, npcApplyUpdates, npcUndoHistoryEntry } from "./src/features/npc/updates.js";
-import { renderNpcBank, renderNpcList } from "./src/features/npc/ui.js";
+import { npcParseBlock, meguminFindNpcDossiers, npcCreateRecord } from "./src/features/npc/data.js";
+import { npcParseUpdateBlocks, npcApplyUpdates } from "./src/features/npc/updates.js";
+import { renderNpcList } from "./src/features/npc/ui.js";
 import {
     stateOnMessageReceived, stateOnSwiped, stateOnSwipeDeleted, stateOnEdited, stateOnDeleted, stateOnChatLoaded,
     setWorldStateChangedHook,
@@ -129,17 +94,9 @@ import {
 import {
     meguminDecorateMessageBody, meguminRefreshBlocksInChat, meguminScheduleBlocksRefresh,
 } from "./src/features/blocks/chat.js";
-import {
-    renderImageGen, igFetchComfyLists, toggleQuickGenButton, igTestConnection,
-    igPopulateWorkflows, igNewWorkflowClick, igDeleteWorkflowClick, igOpenWorkflowEditorClick,
-    igManualGenerate, generateImagePromptText, addKazumaRetryButtons, kazumaRetrySweep,
-    igGenerateWithComfy, igAutoImageForReply, v2LooksForArrivals, prepareImagePrompt,
-    combinedTurnWanted, runCombinedTurn,
-} from "./src/features/imagegen/index.js";
 import { buildBaseDict } from "./src/engine/buildBaseDict.js";
 import { handlePromptInjection } from "./src/engine/injection.js";
 import { suiteEnabled, setSuiteEnabled, syncPowerUI } from "./src/core/power.js";
-import { updateLiveTokenCount } from "./src/core/tokens.js";
 import { initDraggableButton, updateCharacterDisplay, discoverDefaultImages } from "./src/ui/launcher.js";
 import { tabsUI, switchTab, updateGlobalSyncButton, toggleTabGlobalSync } from "./src/ui/tabs.js";
 import { renderDevMode } from "./src/ui/devmode.js";
@@ -196,16 +153,10 @@ import { renderDevMode } from "./src/ui/devmode.js";
 
 
 // -------------------------------------------------------------
-// STAGE 8: IMAGE GEN KAZUMA (ComfyUI Integration)
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// STAGE 8 HELPER FUNCTIONS
-// -------------------------------------------------------------
-
-
-// -------------------------------------------------------------
 // SIDE PANEL — Tab renderer
+// Pulls the in-chat tracker blocks (World State, NPC Inner Chatter,
+// Summary, NPC dossiers) out into a fixed side panel.
+// -------------------------------------------------------------
 // Pulls the in-chat tracker blocks (World State, NPC Inner Chatter,
 // Summary, NPC dossiers) out into a fixed side panel.
 // -------------------------------------------------------------
@@ -462,8 +413,7 @@ jQuery(async () => {
             // Handle swipe rewind & sync
             // World State side-model reads land in the background; redraw the
             // cards when one starts ("Reading…") and when it lands.
-            // …and a character who just arrived gets a look (Image Gen V2).
-            setWorldStateChangedHook(() => { meguminScheduleBlocksRefresh(); v2LooksForArrivals(); });
+            setWorldStateChangedHook(() => { meguminScheduleBlocksRefresh(); });
             // Send guard: SillyTavern waits for this handler before it talks to
             // the API, so a reply sent while Chomusuke has the worker profile
             // switched in (switching in or back, when Send is still live) waits
@@ -500,22 +450,15 @@ jQuery(async () => {
                     if (stateOnChatLoaded()) meguminScheduleBlocksRefresh();
                 }, 250);
             });
-            // IMAGE GEN AUTO-GEN & SWIPE TRIGGERS
+            // REPLY ARRIVAL (reads, director, memory, NPC bank)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {
                 updateMemoryVisuals();
-                // Master switch off: nothing below runs (no reads, images, director, memory, NPC bank).
+                // Master switch off: nothing below runs (no reads, director, memory, NPC bank).
                 if (!suiteEnabled()) return;
 
                 // --- WORLD STATE ---
-                // First, so everything below (image gen included) sees this
-                // reply's outfits.
-                // Chomusuke "Combine calls": on an image turn, one call reads World
-                // State AND writes the image prompt (no separate read below).
-                const combinedTurn = combinedTurnWanted(receivedId, receivedType);
                 try {
-                    if (stateOnMessageReceived(receivedId, receivedType, { skipSideRead: Boolean(combinedTurn && combinedTurn.world) })) meguminScheduleBlocksRefresh();
-                    // Image Gen V2: a character who just arrived gets a look.
-                    v2LooksForArrivals();
+                    if (stateOnMessageReceived(receivedId, receivedType)) meguminScheduleBlocksRefresh();
                 } catch (e) {
                     console.error("[Megumin-Suite] World State update failed", e);
                 }
@@ -524,8 +467,7 @@ jQuery(async () => {
                 // Bonds, Sheet, Inner Chatter, CYOA the story model was not asked
                 // for: Chomusuke reads the reply and writes them. Queued after the
                 // World State read. Does nothing unless the Blocks route is on.
-                // (A combined call below does it instead when Combine calls is on.)
-                if (!BLOCKS_NOT_A_REPLY.has(receivedType) && !(combinedTurn && combinedTurn.blocks)) {
+                if (!BLOCKS_NOT_A_REPLY.has(receivedType)) {
                     const chatNow = getContext().chat || [];
                     const blocksIndex = typeof receivedId === "number" ? receivedId : chatNow.length - 1;
                     blocksReadForReply(blocksIndex, { force: receivedType === "continue" })
@@ -535,25 +477,11 @@ jQuery(async () => {
                 // --- NOTEBOOK BY CHOMUSUKE (plan 010) ---
                 // Clues, who learned what, what came out. Does nothing unless the
                 // Notebook route is on and the notebook has live truths.
-                if (!BLOCKS_NOT_A_REPLY.has(receivedType) && !(combinedTurn && combinedTurn.notebook)) {
+                if (!BLOCKS_NOT_A_REPLY.has(receivedType)) {
                     const chatNow = getContext().chat || [];
                     const nbIndex = typeof receivedId === "number" ? receivedId : chatNow.length - 1;
                     notebookReadForReply(nbIndex, { force: receivedType === "continue" })
                         .catch(e => console.error("[Megumin-Suite] Notebook read failed", e));
-                }
-
-                // --- AUTOMATIC IMAGE BY CHOMUSUKE ---
-                // After World State, so its read is queued first and the image
-                // uses the newest outfits. Does nothing unless Chomusuke writes images.
-                (combinedTurn
-                    ? runCombinedTurn(receivedId, receivedType, combinedTurn)
-                    : igAutoImageForReply(receivedId, receivedType, generateImagePromptText, prepareImagePrompt))
-                    .catch(e => console.error("[Megumin-Suite] Automatic image failed", e));
-                // A combined call without an image still leaves the reply's own
-                // automatic image (if Chomusuke does not write it) to its usual path.
-                if (combinedTurn && !combinedTurn.image) {
-                    igAutoImageForReply(receivedId, receivedType, generateImagePromptText, prepareImagePrompt)
-                        .catch(e => console.error("[Megumin-Suite] Automatic image failed", e));
                 }
 
                 // --- STORY DIRECTOR FEEDBACK & AUTO-EVOLVE ---
@@ -688,8 +616,6 @@ jQuery(async () => {
                     }
                 }
 
-                const s = localProfile?.imageGen;
-
                 // AUTO-EXTRACT NPCs
                 const npcBank = localProfile?.npcBank;
                 // Stamped next to the capture of `npcBank`, the same way `sp` is stamped
@@ -761,133 +687,7 @@ jQuery(async () => {
                     }
                 }
 
-                if (!s || !s.enabled) return;
-
-                const chat = getContext().chat;
-                if (!chat || !chat.length) return;
-
-                const lastMsg = chat[chat.length - 1];
-                if (lastMsg.is_user || lastMsg.is_system) return;
-
-                // Look for the <img prompt="..."> tags in the AI's response (supports multiple)
-                const imgRegexGlobal = /<img[^>]*?prompt=(["']?)([\s\S]*?)(?:\1\s*\/?>|\1\s*>|\1\s+[a-zA-Z]+=| \/>|>|$)/ig;
-                const allMatches = [...lastMsg.mes.matchAll(imgRegexGlobal)];
-
-                // FILTER: Ignore any image tags that appear inside the <think>...</think> block
-                const lastThinkEnd = lastMsg.mes.lastIndexOf("</think>");
-                const matches = allMatches.filter(m => m.index > lastThinkEnd);
-
-                if (matches.length > 0) {
-                    const msgIndex = chat.length - 1;
-                    const injectMode = s.injectMode || "new_msg";
-                    const batchId = Date.now();
-                    
-                    let modifiedMes = lastMsg.mes;
-
-                    // Iterate backwards so we can replace by exact index without shifting string positions
-                    for (let i = matches.length - 1; i >= 0; i--) {
-                        const match = matches[i];
-                        const uniquePlaceholderId = `kazuma-img-${batchId}-${i}`;
-                        const placeholder = `<div id="${uniquePlaceholderId}" class="kazuma-img-placeholder" style="color:var(--gold); font-style: italic; margin: 10px 0;">[Generating Image...]</div>`;
-
-                        if (injectMode === "inline") {
-                            modifiedMes = modifiedMes.substring(0, match.index) + placeholder + modifiedMes.substring(match.index + match[0].length);
-                        } else {
-                            modifiedMes = modifiedMes.substring(0, match.index) + modifiedMes.substring(match.index + match[0].length);
-                        }
-                    }
-
-                    lastMsg.mes = modifiedMes.trim();
-                    await saveChat();
-                    
-                    // Delay UI update slightly so SillyTavern's internal handlers (like Reasoning) 
-                    // finish rendering the DOM before we attempt to update the block.
-                    setTimeout(() => {
-                        if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext && typeof SillyTavern.getContext().updateMessageBlock === "function") {
-                            SillyTavern.getContext().updateMessageBlock(msgIndex, lastMsg);
-                        } else if (typeof updateMessageBlock === "function") {
-                            updateMessageBlock(msgIndex, lastMsg);
-                            // The rebuild dropped the block card with the rest of the body.
-                            meguminScheduleBlocksRefresh();
-                        } else {
-                            reloadCurrentChat(); // Refreshes the chat window instantly
-                        }
-                    }, 100);
-
-                    // 2. Send the extracted prompts to ComfyUI!
-                    matches.forEach((match, idx) => {
-                        const extractedPrompt = match[2];
-                        const uniquePlaceholderId = `kazuma-img-${batchId}-${idx}`;
-                        
-                        setTimeout(() => {
-                            toastr.info(`Image tag ${idx + 1} detected. Sending to ComfyUI...`);
-                            igGenerateWithComfy(extractedPrompt, { 
-                                message: lastMsg, 
-                                index: msgIndex, 
-                                mode: injectMode, 
-                                isInlineAuto: true,
-                                placeholderId: uniquePlaceholderId 
-                            });
-                        }, 500 + (idx * 1500)); // Stagger calls slightly to prevent overloading ComfyUI
-                    });
-                }
             });
-            const meguminSwipeHandler = async (data) => {
-                if (!suiteEnabled()) return; // switched off: SillyTavern handles the overswipe itself
-                const s = localProfile?.imageGen;
-                if (!s || !s.enabled) return;
-
-                const { message, direction, element } = data;
-
-                // Only trigger on right swipes
-                if (direction !== "right") return;
-
-                const media = message.extra?.media || [];
-                const idx = message.extra?.media_index || 0;
-
-                // Only trigger on the LAST image in the gallery (overswipe)
-                if (idx < media.length - 1) return;
-
-                const mediaObj = media[idx];
-
-                // If there is no title (prompt), we can't regenerate it.
-                if (!mediaObj || !mediaObj.title) return;
-
-                // PRIORITY HACK: Temporarily stun both old and new ST Image Gen settings
-                // so the native ST listener aborts itself!
-                let ogPower = null;
-                if (window.power_user && window.power_user.image_overswipe) {
-                    ogPower = window.power_user.image_overswipe;
-                    window.power_user.image_overswipe = "off";
-                }
-
-                let ogExt = null;
-                if (extension_settings.image_generation && extension_settings.image_generation.overswipe) {
-                    ogExt = extension_settings.image_generation.overswipe;
-                    extension_settings.image_generation.overswipe = false;
-                }
-
-                // Restore ST's native settings 200ms later after the default listener aborts
-                setTimeout(() => {
-                    if (ogPower && window.power_user) window.power_user.image_overswipe = ogPower;
-                    if (ogExt && extension_settings.image_generation) extension_settings.image_generation.overswipe = ogExt;
-                }, 200);
-
-                toastr.info("Regenerating Image...", "Megumin Suite");
-                await igGenerateWithComfy(mediaObj.title, { message: message, element: $(element) });
-            };
-
-            // Bind the listener
-            eventSource.on(event_types.IMAGE_SWIPED, meguminSwipeHandler);
-
-            // FORCE IT TO THE FRONT OF THE REAL ARRAY
-            // This ensures our extension evaluates the swipe BEFORE SillyTavern does.
-            if (eventSource._events && Array.isArray(eventSource._events[event_types.IMAGE_SWIPED])) {
-                const arr = eventSource._events[event_types.IMAGE_SWIPED];
-                if (arr.length > 1 && arr[arr.length - 1] === meguminSwipeHandler) {
-                    arr.unshift(arr.pop());
-                }
-            }
         }
 
         $("body").on("click", "#prompt-slot-fixed-btn", function () { initProfile(); updateCharacterDisplay(); switchTab(0); $("#prompt-slot-modal-overlay").fadeIn(250).css("display", "flex"); });
@@ -901,18 +701,21 @@ jQuery(async () => {
                 $("#prompt-slot-modal-overlay").fadeOut(200);
             }
         });
+        // ── QUICK GEN BUTTON (stub) ──
+        // ponytail: image gen is out; the button stays visible so layout and muscle
+        // memory keep working, and says so when pressed. Reattach the igManualGenerate
+        // pipeline here when images return.
         let att = 0;
         const int = setInterval(() => {
             if ($("#kazuma_quick_gen").length > 0) {
                 clearInterval(int);
                 return;
             }
-            const b = `<div id="kazuma_quick_gen" class="interactable" title="Visualize Last Scene (Manual)" style="cursor: pointer; width: 35px; height: 35px; display: none; align-items: center; justify-content: center; margin-right: 5px; color: var(--gold);"><i class="fa-solid fa-image fa-lg"></i></div>`;
+            const b = `<div id="kazuma_quick_gen" class="interactable" title="Visualize Last Scene" style="cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; margin-right: 5px; color: var(--gold);"><i class="fa-solid fa-image fa-lg"></i></div>`;
             let t = $("#send_but_sheld");
             if (!t.length) t = $("#send_textarea");
             if (t.length) {
                 t.attr("id") === "send_textarea" ? t.before(b) : t.prepend(b);
-                toggleQuickGenButton(); // Ensure correct visibility immediately upon injection
                 clearInterval(int);
             }
             att++;
@@ -922,38 +725,8 @@ jQuery(async () => {
         $(document).on("click", "#kazuma_quick_gen", function (e) {
             e.preventDefault();
             e.stopPropagation();
-            igManualGenerate();
+            toastr.info("Image generation is not available in this build.", "Megumin Suite", { timeOut: 2000 });
         });
-
-        // ── INLINE IMAGE RETRY: Add buttons to existing images on chat load ──
-        eventSource.on(event_types.CHAT_CHANGED, () => {
-            setTimeout(() => {
-                const context = getContext();
-                if (!context.chat) return;
-                for (let i = 0; i < context.chat.length; i++) {
-                    addKazumaRetryButtons(i);
-                }
-            }, 300);
-        });
-
-        // Re-add retry buttons after swipes and edits (ST re-renders the DOM)
-        const kazumaReAddRetry = (index) => setTimeout(() => addKazumaRetryButtons(index), 150);
-        eventSource.on(event_types.MESSAGE_SWIPED, kazumaReAddRetry);
-        eventSource.on(event_types.MESSAGE_UPDATED, kazumaReAddRetry);
-        eventSource.on(event_types.MESSAGE_EDITED, kazumaReAddRetry);
-
-        // Scrolling up loads older messages into the page with no button on them.
-        // Re-scan the whole chat; messages that are not on screen are skipped
-        // cheaply, and messages that already have a button are left alone.
-        const kazumaSweepRetry = () => setTimeout(() => {
-            const ctx = getContext();
-            if (!ctx.chat) return;
-            for (let i = 0; i < ctx.chat.length; i++) {
-                addKazumaRetryButtons(i);
-            }
-        }, 150);
-        eventSource.on(event_types.MORE_MESSAGES_LOADED, kazumaSweepRetry);
-        eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, kazumaReAddRetry);
 
         // ── MASTER BLOCK CARD ──
         // Nothing is drawn mid-stream: a half-written envelope re-parsed on every

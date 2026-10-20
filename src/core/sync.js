@@ -30,7 +30,6 @@ export const TAB_SYNC_KEYS = {
     "Story Director": ["storyPlan"],
     "The Notebook": ["notebook"],
     "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
-    "Images": ["imageGen"],
     "NPC Bank": ["npcBank"],
     "Memory": ["memoryCore"],
     "Chomusuke": ["chomusuke"]
@@ -144,12 +143,6 @@ export function applyTabKeysToAllProfiles(title) {
                 prof[k] = JSON.parse(JSON.stringify(currentData[k]));
                 prof[k].shortTermChunks = preservedShort || [];
                 prof[k].longTermVault = preservedLong || [];
-
-            } else if (k === "imageGen" && currentData[k]) {
-                if (!prof[k]) prof[k] = {};
-                prof[k] = JSON.parse(JSON.stringify(currentData[k]));
-                // Looks belong to each chat's file, never to a synced profile.
-                delete prof[k].characterTags;
 
             } else if (currentData[k] !== undefined) {
                 prof[k] = JSON.parse(JSON.stringify(currentData[k]));

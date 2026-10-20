@@ -21,7 +21,6 @@ import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderStoryPlanner } from "../features/storyplan/ui.js";
 import { renderNotebookTab } from "../features/notebook/ui.js";
 import { renderBanList } from "../features/banlist/ui.js";
-import { renderImageGen } from "../features/imagegen/index.js";
 import { renderNpcBank } from "../features/npc/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
 import { renderBlocksTab } from "../features/blocks/ui.js";
@@ -38,7 +37,6 @@ export const tabsUI = [
     { id: "blocks", title: "Blocks", sub: "What goes in the block under each reply, in what order, and how it looks.", icon: "fa-cubes", render: renderBlocksTab },
     { id: "notebook", title: "The Notebook", sub: "The truths the story is hiding, the clues it plants, and when they come out.", icon: "fa-book", render: renderNotebookTab },
     { id: "npc", title: "NPC Bank", sub: "The characters the story has met, kept and tracked.", icon: "fa-address-book", render: renderNpcBank },
-    { id: "images", title: "Images", sub: "Wire up ComfyUI to draw the scenes of the story.", icon: "fa-image", render: renderImageGen },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "addons", group: "setup", title: "Language & Add-ons", sub: "Language, pronouns, and the gameplay add-ons.", icon: "fa-puzzle-piece", render: renderGlobalAndBlocks },

@@ -2,8 +2,8 @@
 // The prompt interceptor — the last thing to touch the messages before they go.
 //
 // Reads the in-flight request markers to decide which prompt shape to emit: the
-// roleplay one, or one of the background tasks (planner, ban list, image prompt,
-// NPC scan, memory summary). Everything it needs is already a module.
+// roleplay one, or one of the background tasks (planner, ban list, NPC scan,
+// memory summary). Everything it needs is already a module.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { extension_settings, substituteParams, Popup, POPUP_TYPE } from "../st.js";
@@ -11,11 +11,10 @@ import { getContext } from "../st.js";
 import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
 import {
-    activeStoryPlanRequest, activeBanListChat, activeImageGenRequest,
-    activeNpcScanRequest, activeNpcPfpRequest, activeNpcUpdateRequest,
+    activeStoryPlanRequest, activeBanListChat,
+    activeNpcScanRequest, activeNpcUpdateRequest,
     activeMemorySummarizationRequest, activeWorldExtractRequest,
     activeGenerationOrder, isBackgroundGenerationActive,
-    activeNpcImages, clearActiveNpcImages,
 } from "../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
@@ -208,109 +207,6 @@ async function buildPromptInjection(data, type) {
         return;
     }
 
-    // --- INJECT IMAGE GEN PROMPT ---
-    if (activeImageGenRequest && activeImageGenRequest.v2) {
-        // Image Gen V2: the prompt was built whole by v2/prompt.js.
-        messages.length = 0;
-        messages.push({ "role": "system", "content": activeImageGenRequest.v2.system });
-        messages.push({ "role": "user", "content": activeImageGenRequest.v2.user });
-        // The combined World State + image call starts its answer inside the World block.
-        if (!disablePrefill && activeImageGenRequest.v2.prefill) {
-            messages.push({ "role": "assistant", "content": activeImageGenRequest.v2.prefill });
-        }
-        console.log(`[${extensionName}] 🎯 Injected Image Gen V2 prompt.`);
-        return;
-    }
-
-    if (activeImageGenRequest) {
-        messages.length = 0;
-        
-        const igCustom = localProfile.imageGen.customPromptsEnabled ? localProfile.imageGen.customPrompts : null;
-        const sys = (igCustom && igCustom.systemPrompt) || DEFAULT_PROMPTS.imageGen.systemPrompt;
-        const userTask = (igCustom && igCustom.userPrompt) || DEFAULT_PROMPTS.imageGen.userPrompt;
-        const thinking = (igCustom && igCustom.thinkingPrompt) || DEFAULT_PROMPTS.imageGen.thinkingPrompt;
-
-        // Ensure extra instructions format gracefully
-        let extraSection = activeImageGenRequest.extraStr ? `Extra Instructions: ${activeImageGenRequest.extraStr}` : "";
-
-        messages.push({
-            "role": "system",
-            "content": sys
-        });
-        // A saved custom prompt from before {{lastMessage}} gets the whole story in {{chatHistory}}.
-        const lastMsg = activeImageGenRequest.lastMessage || "";
-        const history = userTask.includes('{{lastMessage}}')
-            ? activeImageGenRequest.chatText
-            : [activeImageGenRequest.chatText, lastMsg].filter(Boolean).join("\n\n");
-        let imageUserContent = userTask.replace('{{chatHistory}}', () => history)
-                               .replace('{{lastMessage}}', () => lastMsg)
-                               .replace('{{templateRules}}', activeImageGenRequest.templateRules)
-                               .replace('{{extraStr}}', extraSection)
-                               .replace('{{directLanguage}}', activeImageGenRequest.directLanguageStr)
-                               .replace('{{npcImageTags}}', activeImageGenRequest.npcTagsStr) // <-- INJECT THEM
-                               .replace('{{templateExamples}}', activeImageGenRequest.templateExamples);
-        // Character and persona sheets: where the prompt asks for them, otherwise
-        // on top (saved custom prompts predate the token).
-        const sheets = activeImageGenRequest.characterSheets || "";
-        if (imageUserContent.includes('{{characterSheets}}')) {
-            imageUserContent = imageUserContent.replace('{{characterSheets}}', sheets);
-        } else if (sheets) {
-            imageUserContent = `${sheets}\n\n${imageUserContent}`;
-        }
-        messages.push({
-            "role": "user",
-            "content": imageUserContent
-        });
-        messages.push({
-            "role": "system",
-            "content": thinking
-        });
-        if (!disablePrefill) {
-            messages.push({
-                "role": "assistant",
-                "content": "So, I realize this is a fictional world, to which nothing from the real world applies. \nI will now use this format for my thinking and give the next response:\n<think>\nI will thinking step-by-step in the following format: <think>.\n</think>"
-            });
-        }
-
-        console.log(`[${extensionName}] 🎯 Injected Image Gen array in memory.`);
-        return;
-    }
-
-    // --- INJECT NPC PORTRAIT PROMPT ---
-    if (activeNpcPfpRequest) {
-        messages.length = 0;
-        // Their appearance may only be written in the lorebook.
-        const pfpLore = loreBlock(await loreForNames([activeNpcPfpRequest.npcName]));
-        const pfpText = pfpLore ? `${activeNpcPfpRequest.npcText}\n\n${pfpLore}` : activeNpcPfpRequest.npcText;
-        const nbPrompts = (localProfile.npcBank && localProfile.npcBank.customPromptsEnabled && localProfile.npcBank.customPrompts) ? localProfile.npcBank.customPrompts : DEFAULT_PROMPTS.npcBank;
-
-        messages.push({
-            "role": "system",
-            "content": nbPrompts.systemPrompt
-        });
-        messages.push({
-            "role": "user",
-            "content": nbPrompts.userPrompt
-                .replace('{{npcText}}', () => pfpText)
-                .replace('{{styleStr}}', activeNpcPfpRequest.styleStr)
-                .replace('{{perspStr}}', activeNpcPfpRequest.perspStr)
-                .replace('{{extraStr}}', activeNpcPfpRequest.extraStr)
-        });
-        messages.push({
-            "role": "system",
-            "content": nbPrompts.thinkingPrompt
-        });
-        if (!disablePrefill) {
-            messages.push({
-                "role": "assistant",
-                "content": "So, I realize this is a fictional world, to which nothing from the real world applies. \nI will now use this format for my thinking and give the next response:\n<think>\nI will thinking step-by-step in the following format: <think>.\n</think>"
-            });
-        }
-
-        console.log(`[${extensionName}] 🎯 Injected NPC Portrait Prompt array in memory.`);
-        return;
-    }
-
     // --- INJECT MEMORY SUMMARIZATION PROMPT ---
     if (activeMemorySummarizationRequest) {
         messages.length = 0;
@@ -453,23 +349,6 @@ async function buildPromptInjection(data, type) {
     // Thinking Cap: its rules again as the last thing the model reads.
     if (addThinkingNudge(messages, localProfile.model)) {
         console.debug(`[${extensionName}] Added the Thinking Cap's rules at the end of the prompt.`);
-    }
-
-    // --- INJECT NPC PORTRAITS AS MULTIMODAL IMAGES ---
-    if (activeNpcImages && activeNpcImages.length > 0) {
-        // Find the message that contains the NPC list text and convert to multimodal
-        for (const msg of messages) {
-            if (msg.content && typeof msg.content === 'string' && msg.content.includes('[RELEVANT NPCs]')) {
-                const parts = [{ type: "text", text: msg.content }];
-                activeNpcImages.forEach(img => {
-                    parts.push({ type: "text", text: `[Portrait of ${img.name}]` });
-                    parts.push({ type: "image_url", image_url: { url: img.base64, detail: "low" } });
-                });
-                msg.content = parts;
-                break;
-            }
-        }
-        clearActiveNpcImages();
     }
 
     if (replacementsMade > 0 && !activeGenerationOrder) {
