@@ -27,7 +27,6 @@ export const TAB_SYNC_KEYS = {
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
     "Language & Add-ons": ["addons", "blocks", "userLanguage", "userPronouns", "onomatopoeia", "v9Limits"],
     "Blocks": ["blockStack", "statBlocks", "blocks", "hideBlocksFromAI"],
-    "Story Director": ["storyPlan"],
     "The Notebook": ["notebook"],
     "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
     "NPC Bank": ["npcBank"],
@@ -118,19 +117,7 @@ export function applyTabKeysToAllProfiles(title) {
 
         keys.forEach(k => {
             // --- SPECIAL HANDLING: settings travel, content stays put ---
-            if (k === "storyPlan" && currentData[k]) {
-                if (!prof[k]) prof[k] = {};
-                const preservedPlan = prof[k].currentPlan;
-                const preservedTracker = prof[k].lastTrackerState;
-                const preservedIndex = prof[k].planMessageIndex;
-
-                prof[k] = JSON.parse(JSON.stringify(currentData[k]));
-
-                prof[k].currentPlan = preservedPlan || "";
-                prof[k].lastTrackerState = preservedTracker || "";
-                prof[k].planMessageIndex = preservedIndex !== undefined ? preservedIndex : null;
-
-            } else if (k === "npcBank" && currentData[k]) {
+            if (k === "npcBank" && currentData[k]) {
                 if (!prof[k]) prof[k] = {};
                 const preservedNpcs = prof[k].npcs;
                 prof[k] = JSON.parse(JSON.stringify(currentData[k]));

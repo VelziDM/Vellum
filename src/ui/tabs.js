@@ -18,7 +18,6 @@ import { renderGlobalAndBlocks } from "./tabs/globalAndBlocks.js";
 import { renderSidePanelTab } from "./tabs/sidePanelTab.js";
 import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
-import { renderStoryPlanner } from "../features/storyplan/ui.js";
 import { renderNotebookTab } from "../features/notebook/ui.js";
 import { renderBanList } from "../features/banlist/ui.js";
 import { renderNpcBank } from "../features/npc/ui.js";
@@ -40,7 +39,6 @@ export const tabsUI = [
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "addons", group: "setup", title: "Language & Add-ons", sub: "Language, pronouns, and the gameplay add-ons.", icon: "fa-puzzle-piece", render: renderGlobalAndBlocks },
-    { id: "director", group: "tools", title: "Story Director", sub: "Direct the narrative. Shape what happens next.", icon: "fa-clapperboard", render: renderStoryPlanner },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
     { id: "banlist", group: "tools", title: "Banned Phrases", sub: "Find the phrases the AI keeps repeating and ban them.", icon: "fa-ban", render: renderBanList },
     { id: "sidepanel", group: "tools", title: "Side Panel", sub: "Pop the tracker blocks out of the chat into a fixed side panel.", icon: "fa-table-columns", render: renderSidePanelTab },

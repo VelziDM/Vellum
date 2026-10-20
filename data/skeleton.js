@@ -31,7 +31,7 @@ export const SKELETON = [
     {"id": "dialogueExamples", "name": "Chat Examples", "role": "system", "marker": true, "enabled": true, "content": ""},
     {"id": "scenario", "name": "Scenario", "role": "system", "marker": true, "enabled": true, "content": ""},
     {"id": "worldInfoAfter", "name": "World Info (after)", "role": "system", "marker": true, "enabled": true, "content": ""},
-    {"id": "32d2b9b2-8de5-43c1-95db-5c18eda6f163", "name": "</lore><user_persona>", "role": "system", "marker": false, "enabled": true, "content": "[[storyplan]]\n[[npc list]]\n</character_sheet>\n<user_persona>\nhere the PC/Reader {{user}} persona:\n"},
+    {"id": "32d2b9b2-8de5-43c1-95db-5c18eda6f163", "name": "</lore><user_persona>", "role": "system", "marker": false, "enabled": true, "content": "[[npc list]]\n</character_sheet>\n<user_persona>\nhere the PC/Reader {{user}} persona:\n"},
     {"id": "personaDescription", "name": "Persona Description", "role": "system", "marker": true, "enabled": true, "content": ""},
     {"id": "b1e50687-f98d-41aa-9785-230879068ad1", "name": "</user_persona>", "role": "system", "marker": false, "enabled": true, "content": "</user_persona>"},
     {"id": "78a2405c-7bfb-4599-bad3-4bc53f556557", "name": "<history>", "role": "system", "marker": false, "enabled": true, "content": "<history>\n\n[[long-Memory]]\n\n[[Short-memory]]"},

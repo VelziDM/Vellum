@@ -118,7 +118,7 @@ export function renderGlobalSettings(c) {
         <div class="mtab-toggle-row ${gs.enableUtilityPrefill ? 'active' : ''}" id="gs_toggle_utility_prefill" style="cursor: pointer;">
             <div class="toggle-info">
                 <div class="toggle-label"><i class="fa-solid fa-wand-sparkles" style="color: #10b981;"></i> Utility Prefills</div>
-                <div class="toggle-desc">Puts an opening &lt;think&gt; into the AI's mouth for background jobs — Image Gen, the Ban List, the Story Director, NPC scans. <b>Off by default:</b> Claude and several other APIs reject a prefill outright. Turn it on only if yours accepts one.</div>
+                <div class="toggle-desc">Puts an opening &lt;think&gt; into the AI's mouth for background jobs &mdash; the Ban List and NPC scans. <b>Off by default:</b> Claude and several other APIs reject a prefill outright. Turn it on only if yours accepts one.</div>
             </div>
             <div class="ps-switch" style="${gs.enableUtilityPrefill ? 'background: #10b981;' : ''}"></div>
         </div>
@@ -129,7 +129,7 @@ export function renderGlobalSettings(c) {
         <div class="mtab-toggle-row ${gs.loreInTasks ? 'active' : ''}" id="gs_toggle_lore_tasks" style="cursor: pointer; ${gs.loreInTasks ? 'border-color: #a855f7;' : ''}">
             <div class="toggle-info">
                 <div class="toggle-label"><i class="fa-solid fa-book-atlas" style="color: #a855f7;"></i> Lorebooks in Background Jobs</div>
-                <div class="toggle-desc">Background jobs build their own prompt, so your lorebook entries don't reach them on their own. <b>On:</b> image looks, NPC portraits and NPC refreshes get the entries that name that character; the Story Director and NPC scans get the entries your story has active right now. Your story replies use the lorebook as usual either way.</div>
+                <div class="toggle-desc">Background jobs build their own prompt, so your lorebook entries don't reach them on their own. <b>On:</b> NPC portraits and NPC refreshes get the entries that name that character, and NPC scans get the entries your story has active right now. Your story replies use the lorebook as usual either way.</div>
             </div>
             <div class="ps-switch" style="${gs.loreInTasks ? 'background: #a855f7;' : ''}"></div>
         </div>

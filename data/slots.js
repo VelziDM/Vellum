@@ -55,7 +55,6 @@ const GATE = {
     chatter: gate(p => (p.blocks || []).includes("npc_inner_chatter")
                     || (p.blocks || []).includes("npc_inner_chatter_v2"),
                   "NPC Inner Chatter", "Blocks"),
-    plan:    gate(p => !!(p.storyPlan && p.storyPlan.enabled), "Story Director", "Story Plan"),
     dnratio: gate(p => !!(p.dnRatio && p.dnRatio.enabled), "Dialogue/Narration ratio", "Writing Style"),
     onomato: gate(p => !!(p.onomatopoeia && p.onomatopoeia.enabled), "Onomatopoeia", "Language & Add-ons"),
     dice:    gate(p => (p.addons || []).includes("dice")
@@ -197,9 +196,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
           { label: "Default", value: () => blockText("npc_inner_chatter") },
           { label: "Simple", value: () => blockText("npc_inner_chatter_v2") },
       ] },
-    { key: "storytracker", trigger: "[[storytracker]]", carrier: "blocks", label: "Story Tracker", scope: "shared", group: "blocks",
-      gate: GATE.plan, hint: "Arc, chapter and secrets, printed for the Story Director.",
-      fallback: () => "# at the very end of the response put this block:\n<Story_Tracker>\narc: The Arc that is now active.\nchapter: The chapter that is now active.\nEpisode: The episode that is now active.\nSecrets: Any secret that the user/{{user}} doesn't know.\n</Story_Tracker>" },
 
     // ── Computed from your settings. Overridable, but rarely worth it ────────
     { key: "language", trigger: "[[Language]]", label: "Language Rule", scope: "auto", group: "global",
@@ -232,8 +228,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
     { key: null, trigger: "[[npc_events]]", label: "Organic NPCs & Events", scope: "auto", group: "live",
       where: "Language & Add-ons", gate: GATE.addon("npc_events"),
       hint: "Stops new characters appearing out of nowhere." },
-    { key: null, trigger: "[[storyplan]]", label: "Story Plan", scope: "auto", group: "live", where: "Story Director",
-      gate: GATE.plan, hint: "The current directive from the Story Director." },
     { key: null, trigger: "[[img1]]", label: "Image Rules", scope: "auto", group: "live", where: "Images",
       hint: "Instructions for emitting image prompts." },
     { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",

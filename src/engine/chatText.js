@@ -95,30 +95,6 @@ export function getCleanedChatHistory() {
     return cleanedMessages.join("\n\n");
 }
 
-export function getChatForStoryDirector() {
-    const context = getContext();
-    if (!context.chat || context.chat.length === 0) return "";
-
-    const limit = localProfile?.storyPlan?.contextLimit !== undefined ? localProfile.storyPlan.contextLimit : 100;
-    
-    // Get all messages EXCEPT system messages
-    let msgs = context.chat.filter(m => !m.is_system);
-    
-    // Apply the limit if it's greater than 0
-    if (limit > 0) {
-        msgs = msgs.slice(-limit);
-    }
-
-    // Clean the text and attach the character/user names so the AI knows who is speaking
-    let cleanedMessages = msgs.map(m => {
-        const cleanText = meguminCleanChatHistoryText(m.mes);
-        if (!cleanText) return null;
-        return `${m.name}: ${cleanText}`;
-    }).filter(t => t !== null);
-
-    return cleanedMessages.join("\n\n");
-}
-
 export function getChatForNpcScan() {
     const context = getContext();
     if (!context.chat || context.chat.length === 0) return "";

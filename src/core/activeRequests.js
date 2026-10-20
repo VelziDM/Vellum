@@ -15,10 +15,6 @@
 // setters. See the long note in state.js for why.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Story Director: the chat text being planned against.
-export let activeStoryPlanRequest = null;
-export function setActiveStoryPlanRequest(v) { activeStoryPlanRequest = v; }
-
 // Dynamic Ban List: the chat text being scanned for repetition.
 export let activeBanListChat = null;
 export function setActiveBanListChat(v) { activeBanListChat = v; }
@@ -57,7 +53,6 @@ export function setActiveGenerationOrder(v) { activeGenerationOrder = v; }
 // the extraction is verified.
 export function isBackgroundGenerationActive() {
     return !!(
-        activeStoryPlanRequest ||
         activeBanListChat ||
         activeNpcUpdateRequest ||
         activeMemorySummarizationRequest ||

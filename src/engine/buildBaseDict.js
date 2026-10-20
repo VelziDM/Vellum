@@ -354,31 +354,11 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[THINK]]"] = "";
     }
 
-    // Story Planner Injection
-    if (localProfile.storyPlan && localProfile.storyPlan.enabled) {
-        const planText = localProfile.storyPlan.currentPlan;
-        const spCustom = localProfile.storyPlan.customPromptsEnabled ? localProfile.storyPlan.customPrompts : null;
-        let finalInjection = "";
-        
-        if (localProfile.storyPlan.unrestrictedContent) {
-            const unresBlock = (spCustom && spCustom.unrestrictedBlock) || DEFAULT_PROMPTS.storyPlan.unrestrictedBlock;
-            finalInjection += unresBlock + "\n\n";
-        }
-
-        if (planText && planText.trim() !== "") {
-            const template = (spCustom && spCustom.injectionTemplate) || DEFAULT_PROMPTS.storyPlan.injectionTemplate;
-            finalInjection += template.replace('{{planText}}', planText);
-        }
-
-        dict["[[storyplan]]"] = finalInjection.trim();
-
-        // The refined tracker block you asked for
-        const trackerTemplate = (spCustom && spCustom.trackerTemplate) || DEFAULT_PROMPTS.storyPlan.trackerTemplate;
-        dict["[[storytracker]]"] = trackerTemplate;
-    } else {
-        dict["[[storyplan]]"] = "";
-        dict["[[storytracker]]"] = "";
-    }
+    // [[storyplan]] / [[storytracker]] — the Story Director is gone. Blank both
+    // unconditionally so presets still carrying the tags rinse clean instead of
+    // leaking literals into the model's context.
+    dict["[[storyplan]]"] = "";
+    dict["[[storytracker]]"] = "";
 
     // 4. FINAL INJECTIONS (Banlist)
     // ponytail: image generation is cut out of this build. The anchors stay

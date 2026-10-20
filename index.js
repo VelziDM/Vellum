@@ -62,9 +62,7 @@ import {
 } from "./src/core/sync.js";
 import { cleanLegacySettings, migrateRenamedTabs, migrateUtilityPrefillFlag, dropLookResidue } from "./src/core/migrations.js";
 import { meguminCompactStoredPrompts } from "./src/prompts/storage.js";
-import { getChatForStoryDirector } from "./src/engine/chatText.js";
-import { runWithChomusuke, chomusukeSessionPromise } from "./src/engine/tasks.js";
-import { warnChomusuke, answerKind } from "./src/engine/chomusukeNotice.js";
+import { chomusukeSessionPromise } from "./src/engine/tasks.js";
 import { renderPromptEditor } from "./src/ui/promptEditor.js";
 import { registerRefreshHook, REFRESH } from "./src/core/refreshHooks.js";
 import {
@@ -77,7 +75,6 @@ import {
 } from "./src/core/profile.js";
 import { blocksReadForReply, NOT_A_REPLY as BLOCKS_NOT_A_REPLY } from "./src/features/blocks/worker.js";
 import { notebookReadForReply } from "./src/features/notebook/worker.js";
-import { generateStoryPlanLogic } from "./src/features/storyplan/ui.js";
 import {
     memProcessPendingChunks,
     isMessageArchived,
@@ -482,104 +479,6 @@ jQuery(async () => {
                     const nbIndex = typeof receivedId === "number" ? receivedId : chatNow.length - 1;
                     notebookReadForReply(nbIndex, { force: receivedType === "continue" })
                         .catch(e => console.error("[Megumin-Suite] Notebook read failed", e));
-                }
-
-                // --- STORY DIRECTOR FEEDBACK & AUTO-EVOLVE ---
-                const sp = localProfile?.storyPlan;
-                // Stamped next to the capture of `sp` itself: the auto-evolve below waits
-                // 2 seconds and then awaits a full generation, so `sp` can easily belong to
-                // a chat the user has left by the time the directive comes back.
-                const spIdentity = meguminActiveDataIdentity();
-                if (sp && sp.enabled) {
-                    const chat = getContext().chat;
-                    if (chat && chat.length > 0) {
-                        const lastIndex = chat.length - 1;
-                        const lastMsg = chat[lastIndex];
-                        if (!lastMsg.is_user && !lastMsg.is_system) {
-                            
-                            // 1. Extract the Tracker
-                            const trackerRegex = /<Story_Tracker[^>]*>([\s\S]*?)<\/Story_Tracker\s*>/i;
-                            const match = lastMsg.mes.match(trackerRegex);
-                            let needsEvolve = false;
-
-                            if (match) {
-                                sp.lastTrackerState = match[1].trim();
-                                saveProfileToMemory();
-                                
-                                console.log(`[${extensionName}] 🎬 Story Tracker captured (kept visible).`);
-
-                                // Check if we need to auto-evolve based on status (ONLY if not set to manual)
-                                if (sp.triggerMode !== 'manual') {
-                                    // Looks for either arc_status or directive_status
-                                    const statusMatch = sp.lastTrackerState.match(/(?:directive_status|arc_status):\s*\[?(completed|pivoted|progressing|nearing_completion|nearing_climax)\]?/i);
-                                    if (statusMatch) {
-                                        const status = statusMatch[1].toLowerCase();
-                                        if (status === 'completed' || status === 'pivoted') {
-                                            needsEvolve = true;
-                                            console.log(`[${extensionName}] 🎬 Directive ${status}. Triggering smart auto-evolve.`);
-                                        }
-                                    }
-                                }
-                            } else if (/<Story_Tracker/i.test(lastMsg.mes || "")) {
-                                // Slice from the opening tag, not from character 0 — the tracker
-                                // sits after the prose, so the first 200 characters of the message
-                                // would show narration and none of the block that failed to parse.
-                                const trackerMes = lastMsg.mes || "";
-                                const trackerAt = Math.max(0, trackerMes.search(/<Story_Tracker/i));
-                                console.debug(`[Megumin-Suite] <Story_Tracker> block present but unparseable in message ${lastIndex}`, trackerMes.slice(trackerAt, trackerAt + 200));
-                            }
-
-                            // 2. Frequency-based Trigger Fallback (ONLY if set to frequency)
-                            if (!needsEvolve && sp.triggerMode === 'frequency') {
-                                const aiMsgCount = chat.filter(m => !m.is_user && !m.is_system).length;
-                                if (aiMsgCount > 0 && aiMsgCount % sp.autoFreq === 0) {
-                                    needsEvolve = true;
-                                    console.log(`[${extensionName}] 🎬 Frequency safety net reached. Triggering auto-evolve.`);
-                                }
-                            }
-
-                            // 3. Execute Auto-Evolve
-                            if (needsEvolve) {
-                                toastr.info("Auto-Evolving Narrative Directive...", "Story Director");
-                                setTimeout(async () => {
-                                    // getChatForStoryDirector() reads whatever chat is open
-                                    // NOW, so once the chat has moved this would evolve the
-                                    // new chat's story into the old chat's plan. Checked here
-                                    // as well so a switch during the 2s wait costs no call.
-                                    if (meguminActiveDataIdentity() !== spIdentity) {
-                                        console.debug(`[Megumin-Suite] Story Director auto-evolve skipped: it was queued for "${spIdentity}" but "${meguminActiveDataIdentity()}" is active now.`);
-                                        return;
-                                    }
-                                    const chatText = getChatForStoryDirector();
-                                    if (chatText.length < 100) return;
-                                    try {
-                                        let output = await runWithChomusuke("storyPlan", () => generateStoryPlanLogic(chatText));
-                                        if (meguminActiveDataIdentity() !== spIdentity) {
-                                            console.debug(`[Megumin-Suite] Story Director auto-evolve declined: the chat changed while the directive was generating ("${spIdentity}" to "${meguminActiveDataIdentity()}"). The new directive was discarded, not applied.`);
-                                            return;
-                                        }
-                                        const directiveMatch = output?.match(/<directive>([\s\S]*?)<\/directive>/i) || output?.match(/<plot>([\s\S]*?)<\/plot>/i);
-                                        if (directiveMatch) {
-                                            sp.currentPlan = directiveMatch[1].trim();
-                                            sp.planMessageIndex = (getContext().chat?.length || 1) - 1;
-                                            saveProfileToMemory();
-                                            if ($("#sd_current_plan").length) {
-                                                $("#sd_current_plan").val(sp.currentPlan);
-                                                $("#sd_btn_evolve").prop("disabled", false);
-                                            }
-                                            toastr.success("Narrative Directive Evolved silently!", "Story Director");
-                                        } else if (output !== null) {
-                                            // null: the worker failed and has said so already.
-                                            warnChomusuke(answerKind(output), ["storyPlan"]);
-                                        }
-                                    } catch (e) {
-                                        console.error("[Megumin Suite] Story Director auto-evolve failed", e);
-                                        warnChomusuke("failed", ["storyPlan"], { error: e });
-                                    }
-                                }, 2000); // Delay to let UI settle
-                            }
-                        }
-                    }
                 }
 
                 // AUTO-TRIGGER MEMORY CORE

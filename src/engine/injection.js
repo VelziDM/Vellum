@@ -2,8 +2,8 @@
 // The prompt interceptor — the last thing to touch the messages before they go.
 //
 // Reads the in-flight request markers to decide which prompt shape to emit: the
-// roleplay one, or one of the background tasks (planner, ban list, NPC scan,
-// memory summary). Everything it needs is already a module.
+// roleplay one, or one of the background tasks (ban list, NPC scan, memory
+// summary). Everything it needs is already a module.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { extension_settings, substituteParams, Popup, POPUP_TYPE } from "../st.js";
@@ -11,14 +11,13 @@ import { getContext } from "../st.js";
 import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
 import {
-    activeStoryPlanRequest, activeBanListChat,
+    activeBanListChat,
     activeNpcScanRequest, activeNpcUpdateRequest,
     activeMemorySummarizationRequest, activeWorldExtractRequest,
     activeGenerationOrder, isBackgroundGenerationActive,
 } from "../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
-import { sdGenreLabel } from "../features/storyplan/ui.js";
 import { memEnsureSemanticQueryFresh } from "../features/memory/vectordb.js";
 import { npcBuildDossierPrompt } from "../features/npc/fields.js";
 import { escapeRegex } from "../utils/regex.js";
@@ -56,60 +55,6 @@ async function buildPromptInjection(data, type) {
     // looking for a switch, so the safe state is the default. `!== true` also means
     // an install that has never seen the setting is off rather than on.
     const disablePrefill = extension_settings[extensionName]?.globalSettings?.enableUtilityPrefill !== true;
-
-    // --- INJECT STORY PLANNER PROMPT ---
-    if (activeStoryPlanRequest) {
-        messages.length = 0;
-
-        // SillyTavern macro substitutions to get Lore and Persona
-        const charLore = typeof substituteParams === 'function' ? substituteParams('{{description}}') : "No character description found.";
-        const userPersona = typeof substituteParams === 'function' ? substituteParams('{{persona}}') : "No user persona found.";
-        // The lorebook entries the story itself has active: the world the plan is made in.
-        const worldLore = loreBlock(await loreForChat());
-        const charLoreAll = worldLore ? `${charLore}\n\n${worldLore}` : charLore;
-
-        const sp = localProfile.storyPlan;
-        const spCustom = sp.customPromptsEnabled ? sp.customPrompts : null;
-        const sys = (spCustom && spCustom.systemPrompt) || DEFAULT_PROMPTS.storyPlan.systemPrompt;
-        let userTask = (spCustom && spCustom.userPrompt) || DEFAULT_PROMPTS.storyPlan.userPrompt;
-        const thinking = (spCustom && spCustom.thinkingPrompt) || DEFAULT_PROMPTS.storyPlan.thinkingPrompt;
-
-        // Construct Director Settings
-        let settingsStr = "DIRECTOR SETTINGS:\n";
-        if (sp.contentRating !== "none") settingsStr += `- Content Rating: ${sp.contentRating.toUpperCase()}\n`;
-        settingsStr += `- Pacing: ${sp.pacing.toUpperCase()}\n`;
-        settingsStr += `- Primary Genre: ${sdGenreLabel(sp)}\n`;
-        if (sp.flavorTags && sp.flavorTags.length > 0) settingsStr += `- Flavor Elements: ${sp.flavorTags.join(', ')}\n`;
-        if (sp.directorsNote && sp.directorsNote.trim()) settingsStr += `- Director's Note: ${sp.directorsNote.trim()}\n`;
-        
-        if (sp.currentPlan && sp.currentPlan.trim()) {
-            settingsStr += `\nPREVIOUS DIRECTIVE (Update/Evolve this):\n${sp.currentPlan.trim()}\n`;
-        } else {
-            settingsStr += `\nGenerate the first narrative directive for this story.\n`;
-        }
-
-        messages.push({
-            "role": "system",
-            "content": sys.replace('{{charLore}}', () => charLoreAll).replace('{{userPersona}}', userPersona).replace('{{chatHistory}}', activeStoryPlanRequest)
-        });
-        messages.push({
-            "role": "user",
-            "content": userTask.replace('{{directorSettings}}', settingsStr)
-        });
-        messages.push({
-            "role": "system",
-            "content": thinking
-        });
-        if (!disablePrefill) {
-            messages.push({
-                "role": "assistant",
-                "content": "ok i will start thinking \n<think>\n"
-            });
-        }
-
-        console.log(`[${extensionName}] 🎯 Injected Story Director array in memory.`);
-        return;
-    }
 
     // --- INJECT NPC SCAN PROMPT ---
     if (activeNpcScanRequest) {

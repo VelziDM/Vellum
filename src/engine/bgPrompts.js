@@ -11,7 +11,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import {
-    activeStoryPlanRequest, activeNpcScanRequest, activeWorldExtractRequest, activeNpcUpdateRequest,
+    activeNpcScanRequest, activeWorldExtractRequest, activeNpcUpdateRequest,
     activeBanListChat, activeMemorySummarizationRequest, activeGenerationOrder,
 } from "../core/activeRequests.js";
 import { extension_settings, getContext, saveSettingsDebounced, Popup, POPUP_TYPE } from "../st.js";
@@ -33,7 +33,6 @@ function gs() {
  * story. Same order as the prompt handler's own checks.
  */
 export function backgroundJobNow() {
-    if (activeStoryPlanRequest) return "director";
     if (activeNpcScanRequest) return "npc";
     if (activeWorldExtractRequest) return activeWorldExtractRequest.job || "world";
     if (activeNpcUpdateRequest) return "npc";

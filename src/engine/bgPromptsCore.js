@@ -11,7 +11,6 @@ export const BG_JOBS = [
     { id: "blocks", label: "Blocks" },
     { id: "notebook", label: "The Notebook" },
     { id: "banlist", label: "Banned Phrases" },
-    { id: "director", label: "Story Director" },
     { id: "style", label: "Writing Style" }
 ];
 

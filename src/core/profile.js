@@ -161,30 +161,10 @@ export function initProfile() {
         customModes: [],
         thinkEffort: "unspecified",
         customThinkEffort: "100",
-        storyPlan: {
-            enabled: false,
-            backend: "direct",
-            triggerMode: "auto",
-            autoFreq: 10,
-            currentPlan: "",
-            customPrompts: null,
-            customPromptsEnabled: false,
-            contentRating: "none",
-            pacing: "natural",
-            primaryGenre: "drama",
-            // Only read when primaryGenre is "custom" — the select keeps its own
-            // value either way, so switching to Custom and back does not lose
-            // whatever was typed.
-            customGenre: "",
-            flavorTags: [],
-            directorsNote: "",
-            unrestrictedContent: false,
-            lastTrackerState: "",
-            planMessageIndex: null
-        },
         // ponytail: image gen removed — the key is simply not created any more.
         // Old profiles may still carry an imageGen object; every reader left is
         // null-guarded, and the dead object is inert.
+        // Same for storyPlan: the Story Director is gone with this build.
         memoryCore: {
             enabled: false,
             architecture: "raw_short_long", // "raw_short_long" or "raw_long"
@@ -221,7 +201,6 @@ export function initProfile() {
             primaryProfileId: "",
             features: {
                 memory: true,
-                storyPlan: true,
                 npc: true,
                 banList: true,
                 styleGen: true,
@@ -324,21 +303,6 @@ export function initProfile() {
     });
     if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
     if (!localProfile.v9Limits) localProfile.v9Limits = defaults.v9Limits;
-    if (!localProfile.storyPlan) localProfile.storyPlan = defaults.storyPlan;
-    // Story Director migration: add new fields to existing profiles
-    if (localProfile.storyPlan) {
-        if (localProfile.storyPlan.customPromptsEnabled === undefined) localProfile.storyPlan.customPromptsEnabled = false;
-        if (localProfile.storyPlan.contentRating === undefined) localProfile.storyPlan.contentRating = "none";
-        if (localProfile.storyPlan.pacing === undefined) localProfile.storyPlan.pacing = "natural";
-        if (localProfile.storyPlan.primaryGenre === undefined) localProfile.storyPlan.primaryGenre = "drama";
-        if (typeof localProfile.storyPlan.customGenre !== "string") localProfile.storyPlan.customGenre = "";
-        if (localProfile.storyPlan.flavorTags === undefined) localProfile.storyPlan.flavorTags = [];
-        if (localProfile.storyPlan.directorsNote === undefined) localProfile.storyPlan.directorsNote = "";
-        if (localProfile.storyPlan.unrestrictedContent === undefined) localProfile.storyPlan.unrestrictedContent = false;
-        if (localProfile.storyPlan.lastTrackerState === undefined) localProfile.storyPlan.lastTrackerState = "";
-        if (localProfile.storyPlan.planMessageIndex === undefined) localProfile.storyPlan.planMessageIndex = null;
-        if (localProfile.storyPlan.contextLimit === undefined) localProfile.storyPlan.contextLimit = 100;
-    }
     if (localProfile.npcBank && localProfile.npcBank.scanDepth === undefined) localProfile.npcBank.scanDepth = 60;
     if (localProfile.banListCustomPromptsEnabled === undefined) localProfile.banListCustomPromptsEnabled = false;
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
@@ -445,7 +409,6 @@ export function initProfile() {
         if (!localProfile.chomusuke.features) {
             localProfile.chomusuke.features = {
                 memory: true,
-                storyPlan: true,
                 npc: true,
                 banList: true,
                 styleGen: true,
@@ -540,7 +503,6 @@ export function initProfile() {
     // the sole remaining original until it lands. Those clean up on the next open.
     const metaHadOnEntry = {
         memory: !!(chat_metadata && chat_metadata["megumin_memory_core"]),
-        plan: !!(chat_metadata && chat_metadata["megumin_story_plan"]),
         npcs: !!(chat_metadata && chat_metadata["megumin_npc_bank"])
     };
 
@@ -553,19 +515,6 @@ export function initProfile() {
         chat_metadata["megumin_memory_core"] = {
             shortTermChunks: localProfile.memoryCore.shortTermChunks || [],
             longTermVault: localProfile.memoryCore.longTermVault || []
-        };
-        saveMetadata();
-    }
-
-    if (chat_metadata && chat_metadata["megumin_story_plan"]) {
-        if (localProfile.storyPlan) {
-            localProfile.storyPlan.currentPlan = chat_metadata["megumin_story_plan"].currentPlan || "";
-            localProfile.storyPlan.lastTrackerState = chat_metadata["megumin_story_plan"].lastTrackerState || "";
-        }
-    } else if (chat_metadata && localProfile.storyPlan && (localProfile.storyPlan.currentPlan || localProfile.storyPlan.lastTrackerState)) {
-        chat_metadata["megumin_story_plan"] = {
-            currentPlan: localProfile.storyPlan.currentPlan || "",
-            lastTrackerState: localProfile.storyPlan.lastTrackerState || ""
         };
         saveMetadata();
     }
@@ -602,20 +551,18 @@ export function initProfile() {
                 delete stored.memoryCore.longTermVault;
                 freed = true;
             }
-            if (metaHadOnEntry.plan && stored.storyPlan
-                && (stored.storyPlan.currentPlan !== undefined || stored.storyPlan.lastTrackerState !== undefined)) {
-                delete stored.storyPlan.currentPlan;
-                delete stored.storyPlan.lastTrackerState;
-                freed = true;
-            }
             if (metaHadOnEntry.npcs && stored.npcBank && stored.npcBank.npcs !== undefined) {
                 delete stored.npcBank.npcs;
                 freed = true;
             }
-            // The removed image gen's V2 look tags. Old profiles carry the
-            // orphaned key quietly; shave it off when it is actually there.
+            // The removed Story Director and image gen. Old profiles carry orphaned
+            // keys quietly; shave them off when they are actually there.
             if (stored.imageGen && stored.imageGen.characterTags !== undefined) {
                 delete stored.imageGen.characterTags;
+                freed = true;
+            }
+            if (stored.storyPlan) {
+                delete stored.storyPlan;
                 freed = true;
             }
             if (freed) saveSettingsDebounced();
@@ -780,21 +727,6 @@ export function pruneFutureData() {
         changesMade = true;
     }
 
-    // 3. Prune Story Director Plan
-    const sp = localProfile?.storyPlan;
-    if (sp && sp.currentPlan && sp.planMessageIndex !== undefined && sp.planMessageIndex !== null) {
-        if (sp.planMessageIndex >= chatLength) {
-            sp.currentPlan = "";
-            sp.planMessageIndex = null;
-            sp.lastTrackerState = "";
-            changesMade = true;
-            if ($("#sd_current_plan").length) {
-                $("#sd_current_plan").val("");
-                $("#sd_btn_evolve").prop("disabled", true);
-            }
-        }
-    }
-
     if (changesMade) {
         saveProfileToMemory();
         console.log(`[Megumin Suite] Pruned/Adjusted out-of-bounds future data (chat length: ${chatLength})`);
@@ -845,7 +777,6 @@ export function saveProfileToMemory() {
 
     if (chat_metadata) {
         const mem = localProfile.memoryCore;
-        const plan = localProfile.storyPlan;
         const bank = localProfile.npcBank;
 
         // Write a block if it has content now, or if the key already exists on the chat.
@@ -858,20 +789,12 @@ export function saveProfileToMemory() {
             chat_metadata["megumin_memory_core"].longTermVault = mem.longTermVault || [];
         }
 
-        if (plan && (plan.currentPlan || plan.lastTrackerState
-            || chat_metadata["megumin_story_plan"] !== undefined)) {
-            if (!chat_metadata["megumin_story_plan"]) chat_metadata["megumin_story_plan"] = {};
-            chat_metadata["megumin_story_plan"].currentPlan = plan.currentPlan || "";
-            chat_metadata["megumin_story_plan"].lastTrackerState = plan.lastTrackerState || "";
-        }
-
         if (bank && ((bank.npcs?.length > 0) || chat_metadata["megumin_npc_bank"] !== undefined)) {
             if (!chat_metadata["megumin_npc_bank"]) chat_metadata["megumin_npc_bank"] = {};
             chat_metadata["megumin_npc_bank"].npcs = bank.npcs || [];
         }
 
         const hasAnyBlock = !!(chat_metadata["megumin_memory_core"]
-            || chat_metadata["megumin_story_plan"]
             || chat_metadata["megumin_npc_bank"]);
 
         if (hasAnyBlock) {
@@ -881,7 +804,6 @@ export function saveProfileToMemory() {
             // stamp so switching chats cannot reuse a stale one.
             const metaStamp = key + "|" + JSON.stringify([
                 chat_metadata["megumin_memory_core"] || null,
-                chat_metadata["megumin_story_plan"] || null,
                 chat_metadata["megumin_npc_bank"] || null
             ]);
             if (metaStamp !== _lastSavedMetaStamp) {
@@ -895,10 +817,6 @@ export function saveProfileToMemory() {
     if (profileToSave.memoryCore) {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
-    }
-    if (profileToSave.storyPlan) {
-        delete profileToSave.storyPlan.currentPlan;
-        delete profileToSave.storyPlan.lastTrackerState;
     }
     if (profileToSave.npcBank) {
         delete profileToSave.npcBank.npcs; // DO NOT save NPCs in settings.json!
@@ -966,10 +884,6 @@ export function flushProfileSettingsToLoadedKey() {
     if (profileToSave.memoryCore) {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
-    }
-    if (profileToSave.storyPlan) {
-        delete profileToSave.storyPlan.currentPlan;
-        delete profileToSave.storyPlan.lastTrackerState;
     }
     if (profileToSave.npcBank) {
         delete profileToSave.npcBank.npcs; // DO NOT save NPCs in settings.json!
