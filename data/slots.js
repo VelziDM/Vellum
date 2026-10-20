@@ -18,10 +18,9 @@
 // you are about to hand-write is meant to be derived.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { addons, blocks, models, modes } from "./database.js";
+import { blocks, models, modes } from "./database.js";
 import { isCoWriterEngine } from "../src/core/engines.js";
 
-const addonText = id => addons.find(a => a.id === id)?.content || "";
 const blockText = id => blocks.find(b => b.id === id)?.content || "";
 
 // ── Scopes ───────────────────────────────────────────────────────────────────
@@ -51,14 +50,10 @@ const gate = (test, label, where) => ({ test, label, where });
 const GATE = {
     think:   gate(p => p.cotEnabled !== false, "Chain of Thought", "Preset & Thinking"),
     block:   id => gate(p => (p.blocks || []).includes(id), null, "Blocks"),
-    addon:   id => gate(p => (p.addons || []).includes(id), null, "Add-ons"),
     chatter: gate(p => (p.blocks || []).includes("npc_inner_chatter")
                     || (p.blocks || []).includes("npc_inner_chatter_v2"),
                   "NPC Inner Chatter", "Blocks"),
     dnratio: gate(p => !!(p.dnRatio && p.dnRatio.enabled), "Dialogue/Narration ratio", "Writing Style"),
-    onomato: gate(p => !!(p.onomatopoeia && p.onomatopoeia.enabled), "Onomatopoeia", "Language & Add-ons"),
-    dice:    gate(p => (p.addons || []).includes("dice")
-                    || (p.addons || []).includes("dice_all"), "Dice", "Add-ons"),
 
     // The one gate keyed on the ENGINE rather than a switch the reader flips.
     // Every engine gets the "never write for {{user}}" rule except the Co-writer
@@ -134,43 +129,10 @@ export const MEGUMIN_SLOT_REGISTRY = [
       fallback: () => "<think>\n<think>\n<think>\n{Thinking}\n</think>" },
 
     // ── Shared fragments: one value, every engine ────────────────────────────
-    { key: "death", trigger: "[[death]]", label: "Death System", scope: "shared", group: "systems",
-      gate: GATE.addon("death"), hint: "What happens when a character should die.",
-      fallback: () => addonText("death") },
-    { key: "combat", trigger: "[[combat]]", label: "Combat System", scope: "shared", group: "systems",
-      gate: GATE.addon("combat"), hint: "How fights are resolved.",
-      fallback: () => addonText("combat") },
-    { key: "html", trigger: "[[html]]", label: "Immersive HTML", scope: "shared", group: "systems",
-      gate: GATE.addon("html"),
-      hint: "Lets the model draw a screen, letter or sign as real HTML instead of describing it.",
-      fallback: () => addonText("html") },
-    { key: "dice", trigger: "[[dice]]", label: "Dice", scope: "shared", group: "systems",
-      gate: GATE.dice,
-      hint: "How the model must use the d20 rolls it is handed each turn. Keep the [[dice_rolls]] marker — this turn's numbers are dropped in there.",
-      // Two add-ons share the [[dice]] anchor and are mutually exclusive, so the
-      // default shown depends on which variant is switched on. That is why the
-      // fallback takes the profile.
-      fallback: p => addonText((p && (p.addons || []).includes("dice_all")) ? "dice_all" : "dice"),
-      presets: [
-          { label: "Player only (3 rolls)", value: () => addonText("dice") },
-          { label: "Everyone (6 rolls)", value: () => addonText("dice_all") },
-      ] },
     { key: "userControl", trigger: "[[user]]", label: "Never Write For {{user}}", scope: "shared", group: "systems",
       gate: GATE.notCoWriter,
       hint: "Sent on every engine except the Co-writer variants, which are built to write {{user}}. It lands in the preset's numbered final reminder list, so keep it written as a numbered line.",
       fallback: () => "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for." },
-    { key: "direct", trigger: "[[Direct]]", label: "Direct Language", scope: "shared", group: "systems",
-      gate: GATE.addon("direct"), hint: "Blunt anatomical wording instead of euphemism.",
-      fallback: () => addonText("direct") },
-    { key: "dn", trigger: "[[DN]]", label: "Dialogue / Narration Tags", scope: "shared", group: "format",
-      gate: GATE.addon("dn"), hint: "Wraps speech and narration in tags so the chat can style them.",
-      fallback: () => addonText("dn") },
-    { key: "dialogueColor", trigger: "[[COLOR]]", label: "Dialogue Colours", scope: "shared", group: "format",
-      gate: GATE.addon("color"), hint: "Gives each speaker their own colour.",
-      fallback: () => addonText("color") },
-    { key: "onomato", trigger: "[[onomato]]", label: "Onomatopoeia", scope: "shared", group: "format",
-      gate: GATE.onomato, hint: "Asks for real sound words rather than descriptions of sound.",
-      fallback: () => "- Narration must utilize onomatopoeia. Use precise, context-specific phonetic representations for physical interactions (e.g., the click of a latch, the thud of a heavy object, the soughing of wind) rather than abstract descriptions of sound." },
     { key: "dnratio", trigger: "[[DNRATIO]]", label: "Dialogue / Narration Ratio", scope: "shared", group: "format",
       gate: GATE.dnratio, hint: "How much of a reply should be speech versus description.",
       fallback: () => "Ratio: Maintain a balance of 50% Dialogue and 50% Narration." },
@@ -185,9 +147,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
     { key: "cyoa", trigger: "[[cyoa]]", carrier: "blocks", label: "Choice Block", scope: "shared", group: "blocks",
       gate: GATE.block("cyoa"), hint: "The numbered options offered at the end of a reply.",
       fallback: () => blockText("cyoa") },
-    { key: "mvu", trigger: "[[MVU]]", label: "MVU Variables", scope: "shared", group: "blocks",
-      gate: GATE.block("mvu"), hint: "The contract with the MVU extension.",
-      fallback: () => blockText("mvu") },
     { key: "npc_inner_chatter", trigger: "[[npc_inner_chatter]]", carrier: "blocks", label: "NPC Inner Chatter",
       scope: "shared", group: "blocks", gate: GATE.chatter,
       hint: "What the NPCs are privately thinking.",
@@ -198,12 +157,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       ] },
 
     // ── Computed from your settings. Overridable, but rarely worth it ────────
-    { key: "language", trigger: "[[Language]]", label: "Language Rule", scope: "auto", group: "global",
-      overridable: true, where: "Language & Add-ons",
-      hint: "Built from the language you picked in the Language & Add-ons tab." },
-    { key: "pronouns", trigger: "[[pronouns]]", label: "Your Pronouns", scope: "auto", group: "global",
-      overridable: true, where: "Language & Add-ons",
-      hint: "Built from the pronouns you picked in the Language & Add-ons tab." },
     { key: "count", trigger: "[[count]]", label: "Word Count", scope: "auto", group: "global",
       overridable: true, deprecated: true, where: "Preset & Thinking",
       hint: "Superseded by Length in Story Config. Always sent empty unless you override it here." },
@@ -225,9 +178,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "The NPCs judged relevant to the current scene." },
     { key: null, trigger: "[[npc_dossier]]", label: "NPC Dossier Rules", scope: "auto", group: "live", where: "NPC Bank",
       hint: "Instructions for keeping dossiers up to date. Not the dossiers themselves." },
-    { key: null, trigger: "[[npc_events]]", label: "Organic NPCs & Events", scope: "auto", group: "live",
-      where: "Language & Add-ons", gate: GATE.addon("npc_events"),
-      hint: "Stops new characters appearing out of nowhere." },
     { key: null, trigger: "[[img1]]", label: "Image Rules", scope: "auto", group: "live", where: "Images",
       hint: "Instructions for emitting image prompts." },
     { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",
@@ -252,6 +202,13 @@ export function meguminAllSlotTriggers() {
     ["[[infoblock2]]", "[[cyoa2]]", "[[storytracker2]]", "[[npc_inner_chatter2]]",
         "[[npc_dossier2]]", "[[img2]]", "[[dice_rolls]]", "[[npc_updates]]", "[[order]]",
         "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"]
+        .forEach(t => out.add(t));
+    // Triggers of add-on slots that were removed with the Language & Add-ons
+    // tab. Nothing fills these any more, so old presets carrying the tags
+    // would leak them verbatim into the prompt — the strip pass keeps them
+    // from ever reaching the model.
+    ["[[death]]", "[[combat]]", "[[html]]", "[[dice]]", "[[Direct]]", "[[DN]]", "[[COLOR]]",
+        "[[onomato]]", "[[Language]]", "[[pronouns]]", "[[npc_events]]", "[[MVU]]"]
         .forEach(t => out.add(t));
     // The bare-bracket spellings an older preset generation used.
     for (let i = 1; i <= 6; i++) out.add(`[prompt${i}]`);

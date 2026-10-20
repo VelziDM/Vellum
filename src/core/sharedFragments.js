@@ -2,15 +2,15 @@
 // Shared fragments — one value for the whole install, for the slots that were
 // never really the engine's property in the first place.
 //
-// The problem this solves: to change one line of the MVU block, the only route
+// The problem this solves: to change one line of the THINK block, the only route
 // used to be "clone an entire engine, edit the MVU box, save, switch to the
 // clone". That clone is a frozen snapshot of p1..p6 taken at clone time, so
 // when the stock engine later improves, the clone never sees it. People ended
 // up stranded on stale engines because they wanted to reword one paragraph.
 //
-// It works because no engine CONTAINS the MVU text. Engines carry p1..p6, cot
-// and prefill; [[MVU]] is filled by buildBaseDict from data/blocks.js. The slot
-// is simply left open for the dictionary. So a value parked here is picked up
+// It works because no engine CONTAINS the shared-slot text. Engines carry
+// p1..p6, cot and prefill; the slots the dictionary fills are simply left open
+// for it. So a value parked here is picked up
 // by stock V7, stock V10 and a custom clone alike, without modifying any of
 // them — and clearing it drops every one of them straight back to the built-in.
 //
@@ -24,7 +24,7 @@
 // "Reset to shared" to remove one.
 //
 // Storage is extension_settings, not the profile, because the ask was global:
-// one MVU for every character and every chat. localProfile would have scoped it
+// one THINK for every character and every chat. localProfile would have scoped it
 // per chat/character, which is a different feature.
 // ────────────────────────────────────────────────────────────────────────────
 

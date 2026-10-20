@@ -24,8 +24,9 @@ import { openWorldEditor } from "../worldstate/editor.js";
 import { meguminSlotByTrigger } from "../../../data/slots.js";
 import { hasSharedFragment } from "../../core/sharedFragments.js";
 
-// Mirrors customBadge() in ui/tabs/globalAndBlocks.js: a block whose text was
-// rewritten in Dev Mode says so here, where it is switched on and ordered.
+// Same pattern used to live in ui/tabs/globalAndBlocks.js (the add-on cards):
+// a slot whose text was rewritten in Dev Mode says so here, where it is
+// switched on and ordered.
 // The link is b.source -- the trigger the block already declares to read its
 // body out of the dictionary -- so no lookup table can rot.
 function editedFlag(b) {

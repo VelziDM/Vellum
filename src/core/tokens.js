@@ -46,7 +46,7 @@ export function updateLiveTokenCount() {
         if (excludeKeys.includes(key)) return;
 
         // Categorize the text using exact matches to prevent overlap
-        if (key === "[[aiprompt]]" || key === "[[config]]" || key === "[[Language]]" || key === "[[pronouns]]" || key === "[[count]]" || key === "[[DNRATIO]]" || key === "[[onomato]]") {
+        if (key === "[[aiprompt]]" || key === "[[config]]" || key === "[[count]]" || key === "[[DNRATIO]]") {
             styleStr += value + " ";
         } else if (key === "[[COT]]" || key === "[[prefill]]" || key === "[[THINK]]") {
             cotStr += value + " ";

@@ -49,6 +49,10 @@ const RENAMED_TABS = [
     // name still lands on the newest.
     ["PRESETS & COT", "Preset & Thinking"],
     ["Global Toggles & Add Ons", "Language & Add-ons"],
+    // The Language & Add-ons tab is gone. Its sync entry folds into the tab the
+    // story rules live on, so a stored checkbox for it stops pointing at a tab
+    // that no longer exists.
+    ["Language & Add-ons", "Preset & Thinking"],
     ["BLOCKS", "Blocks"],
     ["Dynamic Ban List", "Banned Phrases"],
     ["Image Generation", "Images"],

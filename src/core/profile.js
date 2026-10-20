@@ -85,7 +85,6 @@ export function initProfile() {
         // sees a single on/off.
         enhancedDialogue: {},
         personality: "engine",
-        v9Limits: { leanMin: 300, leanMax: 400, fullMin: 700, fullMax: 1200 },
         toggles: { ooc: false, control: false },
         aiTags: [],
         aiGeneratedOptions: [],
@@ -114,11 +113,6 @@ export function initProfile() {
             enabled: false,
             dialogue: 50
         },
-        onomatopoeia: {
-            enabled: false,
-            useStyling: false
-        },
-        addons: [],
         blocks: [],
         // What sits inside the <Blocks> envelope, and in what order. `order` is
         // membership as well as sequence: a block not listed is not emitted.
@@ -151,8 +145,6 @@ export function initProfile() {
         },
         model: "cot-v1-english",
         userNotes: "",
-        userLanguage: "",
-        userPronouns: "off",
         devOverrides: {},
         banList: [],
         banListBackend: "direct",
@@ -302,7 +294,6 @@ export function initProfile() {
         if (localProfile[k] === undefined) localProfile[k] = defaults[k];
     });
     if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
-    if (!localProfile.v9Limits) localProfile.v9Limits = defaults.v9Limits;
     if (localProfile.npcBank && localProfile.npcBank.scanDepth === undefined) localProfile.npcBank.scanDepth = 60;
     if (localProfile.banListCustomPromptsEnabled === undefined) localProfile.banListCustomPromptsEnabled = false;
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
@@ -384,7 +375,6 @@ export function initProfile() {
         if (localProfile.memoryCore.chunkSize === undefined) localProfile.memoryCore.chunkSize = 10;
     }
     if (!localProfile.dnRatio) localProfile.dnRatio = defaults.dnRatio;
-    if (!localProfile.onomatopoeia) localProfile.onomatopoeia = defaults.onomatopoeia;
     // World State: settings only. Profiles written before the state store kept
     // the state itself here, per CHARACTER rather than per chat, which is how
     // one chat's outfits vanished on reload. That copy is dropped; each chat's

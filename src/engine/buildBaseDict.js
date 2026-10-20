@@ -20,7 +20,6 @@ import { npcBuildTextFromData } from "../features/npc/data.js";
 import { npcBuildDossierPrompt, npcBuildUpdatePrompt } from "../features/npc/fields.js";
 import { memGetCachedKeywords } from "../features/memory/keywords.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
-import { meguminRollD20s } from "../utils/dice.js";
 import { meguminOverridableSlots, meguminSlotIsLive, meguminModuleTrigger } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
 import { worldPromptBlock, statsPromptParts, notebookPromptBlock, notebookCurrentPhase } from "../state/index.js";
@@ -40,12 +39,14 @@ export function buildBaseDict(isTokenCount = false) {
     const isModern = isModernEngine(activeEngine);
 
     if (engineUsesRenderLimits(activeEngine)) {
-        const v9l = localProfile.v9Limits || {};
-        dict["[[v9_lean_min]]"] = String(v9l.leanMin || 300);
-        dict["[[v9_lean_max]]"] = String(v9l.leanMax || 400);
-        dict["[[v9_full_min]]"] = String(v9l.fullMin || 700);
-        dict["[[v9_full_max]]"] = String(v9l.fullMax || 1200);
-        
+        // Fixed window sizes. The editable limits died with the Language &
+        // Add-ons tab; the engine text still carries the tags, so the numbers
+        // ship as constants now.
+        dict["[[v9_lean_min]]"] = "300";
+        dict["[[v9_lean_max]]"] = "400";
+        dict["[[v9_full_min]]"] = "700";
+        dict["[[v9_full_max]]"] = "1200";
+
         // Strip normal count entirely just in case
         dict["[[count]]"] = "";
     } else {
@@ -54,15 +55,6 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[v9_full_min]]"] = "";
         dict["[[v9_full_max]]"] = "";
     }
-
-    // 1. GLOBAL DEFAULTS (Language, Pronouns, Word Count)
-    const targetLang = (localProfile.userLanguage && localProfile.userLanguage.trim() !== "")
-        ? localProfile.userLanguage.toUpperCase()
-        : "ENGLISH";
-    dict["[[Language]]"] = `[LANGUAGE RULE]\nALL OUTPUT EXCEPT THINKING MUST BE IN ${targetLang} ONLY.`;
-
-    if (localProfile.userPronouns === "male") dict["[[pronouns]]"] = `{{user}} is male. Always portray and address him as such.`;
-    else if (localProfile.userPronouns === "female") dict["[[pronouns]]"] = `{{user}} is female. Always portray and address her as such.`;
 
     // The legacy word count is gone — length now lives in the Story Config block.
     // The tag is still emitted as empty so any preset that still carries it gets it stripped.
@@ -84,7 +76,7 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[AI2]]"] = "OK i Understnd it.";
     }
 
-    // Standard Toggles & Addons
+    // Standard Toggles
     if (localProfile.toggles.ooc) dict["[[OOC]]"] = hardcodedLogic.toggles.ooc.content;
     if (localProfile.toggles.control) dict["[[control]]"] = hardcodedLogic.toggles.control.content;
     // POV moved out of the style library and into the Story Config block.
@@ -101,10 +93,6 @@ export function buildBaseDict(isTokenCount = false) {
             dict["[[aiprompt]]"] = povInjectionStr + localProfile.aiRule;
         }
     }
-    localProfile.addons.forEach(aId => {
-        const item = hardcodedLogic.addons.find(a => a.id === aId);
-        if (item) dict[item.trigger] = item.content;
-    });
 
 
     // Stage 5 Defaults (Format Blocks)
@@ -134,25 +122,6 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[DNRATIO]]"] = `- Ratio: Maintain a balance of ${d}% Dialogue and ${n}% Narration.`;
     } else {
         dict["[[DNRATIO]]"] = "";
-    }
-
-    if (localProfile.onomatopoeia && localProfile.onomatopoeia.enabled) {
-        let onoRule = `- Narration must utilize onomatopoeia. Use precise, context-specific phonetic representations for physical interactions (e.g., the click of a latch, the thud of a heavy object, the soughing of wind) rather than abstract descriptions of sound.`;
-        if (localProfile.onomatopoeia.useStyling) {
-            onoRule += `\nAll onomatopoeic words must animated and colored using HTML and CSS. The selected style tag and color must objectively correspond to the physical nature or movement of the sound produced; for example, a repetitive friction sound such as "shush-shush" must utilize a sliding animation tag to represent the physical action.`;
-        }
-        dict["[[onomato]]"] = onoRule;
-    } else {
-        dict["[[onomato]]"] = "";
-    }
-
-    // MVU Logic
-    if (localProfile.blocks.includes("mvu")) {
-        let baseMvu = hardcodedLogic.blocks.find(b => b.id === "mvu").content;
-        // Length is a Story Config field now, so the MVU block never carries a word count of its own.
-        dict["[[MVU]]"] = baseMvu.replace("[[count]]", "");
-    } else {
-        dict["[[MVU]]"] = "";
     }
 
     // 3. ENGINE OVERRIDES (The "Superior" Layer)
@@ -274,32 +243,6 @@ export function buildBaseDict(isTokenCount = false) {
         }
     }
 
-    // Dice numbers are filled in AFTER the override pass, not before.
-    // [[dice]] is an editable add-on now, so a reader can rewrite the dice
-    // rules and keep the [[dice_rolls]] marker. Rolling first and
-    // overriding second would replace the filled text with their unfilled
-    // copy, and the marker would then be stripped by the injector's leak
-    // guard -- the rules would arrive with the numbers silently missing.
-    // The dice add-on ships with a marker where this turn's numbers go, and it
-    // is filled in HERE rather than by a second dict entry. A nested trigger
-    // would work only because Object.entries walks the dict in insertion order,
-    // so [[dice]] happens to expand before [[dice_rolls]] is searched for — a
-    // correctness that depends on the order two unrelated lines were written in.
-    // One explicit replacement cannot be broken by reordering anything.
-    //
-    // Fresh numbers every build, so a swipe re-rolls the turn rather than
-    // rewriting the prose around a die that already landed.
-    // Any add-on that declares a roll count gets this turn's numbers. Written as
-    // a loop over what the add-ons ask for rather than a branch per add-on: the
-    // player-only and everyone variants want three and six, and a third variant
-    // would otherwise mean editing the engine to add a number.
-    (localProfile.addons || []).forEach(aId => {
-        const item = hardcodedLogic.addons.find(a => a.id === aId);
-        if (!item || !item.rolls || !dict[item.trigger]) return;
-        dict[item.trigger] = dict[item.trigger]
-            .replace("[[dice_rolls]]", meguminRollD20s(item.rolls).join(", "));
-    });
-
     // Wipe main persona for V6, V7, V8, and V9
     if (localProfile.mode.includes("v6-dream-team") || isV7 || isModern) {
         dict["[[main]]"] = "";
@@ -396,7 +339,7 @@ export function buildBaseDict(isTokenCount = false) {
     dict["[[notebook]]"] = notebookPhaseNow === "off" || engineKeepsNotebook(activeEngine) ? "" : NOTEBOOK_CRAFT;
 
     // Resolve early-evaluated tokens inside all other strings to prevent them from being missed and then cleaned up
-    const earlyTokens = ["[[notebook]]", "[[count]]", "[[Language]]", "[[pronouns]]", "[[DNRATIO]]", "[[img2]]", "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"];
+    const earlyTokens = ["[[notebook]]", "[[count]]", "[[DNRATIO]]", "[[img2]]", "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"];
     earlyTokens.forEach(et => {
         if (dict[et] !== undefined) {
             const val = dict[et];

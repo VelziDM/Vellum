@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Which generation an engine belongs to, and what that means.
 //
-// These four tests used to be written out by hand in buildBaseDict, personality,
-// globalAndBlocks and storyconfig — the same expression, four times. That is how
+// These four tests used to be written out by hand in buildBaseDict, personality
+// and storyconfig — the same expression, three times. That is how
 // V10 came to announce itself as V9 in two different places: V10 was flagged
 // `isV9` so it would inherit V9's behaviour, and every site that turned the flag
 // back into the WORD "V9" was suddenly lying. Fixing one did not fix the others.

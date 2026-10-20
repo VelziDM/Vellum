@@ -18,7 +18,6 @@ import { toggles } from "./toggles.js";
 import { styles } from "./styles.js";
 import { styleTemplates } from "./styleTemplates.js";
 import { directStyles } from "./directStyles.js";
-import { addons } from "./addons.js";
 import { blocks } from "./blocks.js";
 import { models } from "./cot/index.js";
 
@@ -29,10 +28,9 @@ export const hardcodedLogic = {
     styles,
     styleTemplates,
     directStyles,
-    addons,
     blocks,
     models,
 };
 
 // Section-level exports, for code that wants one list without the whole library.
-export { modes, personalities, toggles, styles, styleTemplates, directStyles, addons, blocks, models };
+export { modes, personalities, toggles, styles, styleTemplates, directStyles, blocks, models };

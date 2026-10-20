@@ -4,18 +4,19 @@
 // Two doors, because there are two genuinely different jobs and the old single
 // screen made you do both at once:
 //
-//   ADD-ONS   the pieces every engine shares — thinking steps, MVU, the ban
-//             list, death and combat. Edited on their own, with a map showing
-//             where in the outgoing prompt they land. No engine involved.
+//   ADD-ONS   the pieces every engine shares — thinking steps, the ban list
+//             and the shared format lines. Edited on their own, with a map
+//             showing where in the outgoing prompt they land. No engine
+//             involved.
 //
 //   ENGINES   the rules that make one engine different from another. Shown as
-//             the real document, in the real order. Add-ons appear in that
+//             the real document, in the real order. Slots appear in that
 //             document as chips at their true position: you can see where they
 //             sit, and clicking one takes you to its page.
 //
 // The old editor drew an invented running order — p1..p6 and then every other
 // placeholder in a flat pile underneath. That pile was a lie about placement.
-// [[MVU]] and [[THINK]] live in "Output RULES", which SillyTavern sends AFTER
+// [[THINK]] lives in "Output RULES", which SillyTavern sends AFTER
 // the entire chat history; [[death]] and [[combat]] sit inside Main 2 between
 // p5 and p6. data/skeleton.js is generated from the shipped preset so the
 // document cannot drift from what actually goes out.
@@ -406,11 +407,6 @@ async function promptForModule(existing) {
         <div class="dev-modal">
             <label>What should this be called?</label>
             <input type="text" id="m_n" class="ps-modern-input" value="${esc(m.name)}" placeholder="e.g. Extra combat detail" />
-            <label>Which tab should its on/off switch live in?</label>
-            <select id="m_l" class="ps-modern-input">
-                <option value="settings" ${m.location === "settings" ? "selected" : ""}>Add-ons tab</option>
-                <option value="addons" ${m.location === "addons" ? "selected" : ""}>Global tab</option>
-            </select>
             <label>The text to add</label>
             <textarea id="m_c" class="ps-modern-input" style="height:170px;">${esc(m.content)}</textarea>
         </div>
@@ -423,7 +419,10 @@ async function promptForModule(existing) {
         toastr.warning("A module with no text would do nothing, so it was not added.");
         return null;
     }
-    return { name: $p.find("#m_n").val() || "Module", location: $p.find("#m_l").val(), content };
+    // `location` used to pick which tab drew the module's on/off switch. That
+    // tab (Language & Add-ons) is gone, so new modules keep the legacy value
+    // and are switched through the stored toggles only.
+    return { name: $p.find("#m_n").val() || "Module", location: existing ? m.location : "settings", content };
 }
 
 function renderModulesFor(slot, modeData, rerender) {
@@ -442,7 +441,7 @@ function renderModulesFor(slot, modeData, rerender) {
                     <div class="dev-module-head">
                         <i class="fa-solid fa-puzzle-piece"></i>
                         <span class="dev-module-name">${esc(mod.name)}</span>
-                        <span class="dev-module-where">switch in ${mod.location === "addons" ? "Global" : "Add-ons"}</span>
+                        <span class="dev-module-where">switch: localProfile.toggles</span>
                         <i class="dev-module-edit fa-solid fa-pen-to-square" title="Edit"></i>
                         <i class="dev-module-del fa-solid fa-trash" title="Remove"></i>
                     </div>
@@ -510,8 +509,8 @@ function renderLanding(c) {
                 <div class="dev-door-icon"><i class="fa-solid fa-puzzle-piece"></i></div>
                 <div class="dev-door-title">Add-ons</div>
                 <div class="dev-door-desc">
-                    The pieces every engine shares — thinking steps, MVU, the ban list,
-                    death and combat, the output blocks.
+                    The pieces every engine shares — thinking steps, the ban list
+                    and the ratio line.
                     <b>Change one here and every engine uses it.</b>
                 </div>
                 <div class="dev-door-meta">${changed
@@ -524,8 +523,8 @@ function renderLanding(c) {
                 <div class="dev-door-title">Engines</div>
                 <div class="dev-door-desc">
                     The rules that make one engine write differently from another.
-                    Shown as the real prompt, in the real order, with your add-ons marked
-                    where they land.
+                    Shown as the real prompt, in the real order, with your shared
+                    slots marked where they land.
                 </div>
                 <div class="dev-door-meta">${engines
                     ? `${engines} of your own`
@@ -535,7 +534,7 @@ function renderLanding(c) {
         </div>
         <div class="dev-door-hint">
             <i class="fa-solid fa-circle-info"></i>
-            Not sure? Almost everything people want to change lives in <b>Add-ons</b>.
+            Not sure? Almost everything people want to change lives in <b>Add-ons</b> — the shared, per-install pieces.
             You only need an engine to rewrite how the AI is told to write.
         </div>
     `);

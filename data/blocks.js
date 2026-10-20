@@ -51,12 +51,6 @@ export const blocks = [
 </CYOA>`
     },
     {
-      id: "mvu",
-      label: "MVU Compatibility",
-      trigger: "[[MVU]]",
-      content: "## Main response Structure:\n<gametxt>[[count]][[img2]]</gametxt>\n<combat_log>...</combat_log>\n<location>...</location>\n<UpdateVariable>...</UpdateVariable>"
-    },
-    {
       id: "npc_inner_chatter",
       label: "NPC Inner Chatter",
       trigger: "[[npc_inner_chatter]]",

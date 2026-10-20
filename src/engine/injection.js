@@ -156,10 +156,9 @@ async function buildPromptInjection(data, type) {
     if (activeMemorySummarizationRequest) {
         messages.length = 0;
 
-        // Check if the user specified a language in the Global Settings tab
-        const targetLang = (localProfile.userLanguage && localProfile.userLanguage.trim() !== "")
-            ? localProfile.userLanguage
-            : "the same language used in the chat history";
+        // The language field died with the Language & Add-ons tab. Summaries
+        // answer in whatever language the chat itself is using.
+        const targetLang = "the same language used in the chat history";
 
         const memCustom = localProfile.memoryCore.customPromptsEnabled ? localProfile.memoryCore.customPrompts : null;
         const sys = (memCustom && memCustom.systemPrompt) || DEFAULT_PROMPTS.memoryCore.systemPrompt;

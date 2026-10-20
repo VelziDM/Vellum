@@ -14,7 +14,6 @@ import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
 import { renderPersonality, personaTabInUse } from "./tabs/personality.js";
-import { renderGlobalAndBlocks } from "./tabs/globalAndBlocks.js";
 import { renderSidePanelTab } from "./tabs/sidePanelTab.js";
 import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
@@ -38,7 +37,6 @@ export const tabsUI = [
     { id: "npc", title: "NPC Bank", sub: "The characters the story has met, kept and tracked.", icon: "fa-address-book", render: renderNpcBank },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
-    { id: "addons", group: "setup", title: "Language & Add-ons", sub: "Language, pronouns, and the gameplay add-ons.", icon: "fa-puzzle-piece", render: renderGlobalAndBlocks },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
     { id: "banlist", group: "tools", title: "Banned Phrases", sub: "Find the phrases the AI keeps repeating and ban them.", icon: "fa-ban", render: renderBanList },
     { id: "sidepanel", group: "tools", title: "Side Panel", sub: "Pop the tracker blocks out of the chat into a fixed side panel.", icon: "fa-table-columns", render: renderSidePanelTab },
