@@ -8,7 +8,6 @@
 import { extension_settings, saveSettingsDebounced } from "../../st.js";
 import { extensionName } from "../../core/constants.js";
 import { localProfile } from "../../core/state.js";
-import { engineLocksStyle, lockedStyleIdFor } from "../../core/engines.js";
 import { getCharacterKey } from "../../core/keys.js";
 import { saveProfileToMemory, saveProfileDebounced } from "../../core/profile.js";
 import { fireRefreshHook, REFRESH } from "../../core/refreshHooks.js";
@@ -276,16 +275,6 @@ export function renderStoryConfig(c) {
     const root = $(`<div style="display: flex; flex-direction: column; height: 100%;"></div>`);
 
     const activeEngineForStyle = [...hardcodedLogic.modes, ...(extension_settings[extensionName].customModes || [])].find(m => m.id === localProfile.mode);
-    const isLockedStyleEngine = engineLocksStyle(activeEngineForStyle);
-
-    if (isLockedStyleEngine && !localProfile.activeStyleId) {
-        const targetStyle = lockedStyleIdFor(activeEngineForStyle) || "dir_v7";
-
-        localProfile.activeStyleId = targetStyle;
-        const ds = hardcodedLogic.directStyles.find(x => x.id === targetStyle);
-        if (ds) localProfile.aiRule = ds.rule;
-        saveProfileToMemory();
-    }
 
     const isOff = !localProfile.activeStyleId;
     const customCount = (localProfile.customStyles || []).length;
@@ -383,12 +372,8 @@ export function renderStoryConfig(c) {
     sidebar.append(`<div class="ws-sidebar-title">Writing Style</div>`);
 
     // Off Button
-    const btnOff = $(`<button class="ws-nav-btn ${isOff ? 'active-green' : ''}"><span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-power-off" style="color:${isLockedStyleEngine ? '#ef4444' : ''}"></i> No Style (Off)</span> ${isLockedStyleEngine ? '<i class="fa-solid fa-lock" style="color:#ef4444; font-size:0.7rem;"></i>' : ''}</button>`);
-    if (!isLockedStyleEngine) {
-        btnOff.on("click", () => { localProfile.activeStyleId = null; localProfile.aiRule = ""; saveProfileToMemory(); renderStyleLibrary(c); });
-    } else {
-        btnOff.css({"opacity":"0.6", "cursor":"not-allowed"}).attr("title", "Modern Engines require a narrative style directive.");
-    }
+    const btnOff = $(`<button class="ws-nav-btn ${isOff ? 'active-green' : ''}"><span style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-power-off"></i> No Style (Off)</span></button>`);
+    btnOff.on("click", () => { localProfile.activeStyleId = null; localProfile.aiRule = ""; saveProfileToMemory(); renderStyleLibrary(c); });
     sidebar.append(btnOff);
     sidebar.append(`<div style="height: 1px; background: var(--border-color); margin: 8px 0;"></div>`);
 

@@ -13,24 +13,21 @@ const MODELS = [
     {
         icon: "fa-gem", name: "Gemini",
         tips: [
-            "Use <b>CoT V11</b> as it is: Gemini handles the full thinking well.",
             "Turn on <b>Gemini thinking override</b> (Thinking page, under Advanced) and the <b>prefill</b> in the preset JSON."
         ]
     },
     {
         icon: "fa-dragon", name: "Chinese models", models: "Kimi, DeepSeek, GLM, Qwen",
         tips: [
-            "They think a lot. Pick <b>CoT V11 — Thinking Cap</b>: short notes, no draft in the thinking.",
-            "A temperature of <b>0.7–0.8</b> helps them think less.",
+            "They think a lot. A temperature of <b>0.7–0.8</b> helps them think less, and a word limit on the thinking (Thinking page) puts a ceiling on it.",
             "Kimi ignores Reasoning Effort: it only thinks or doesn't. If it still thinks too long, turn its thinking off in SillyTavern's connection settings if you want."
-        ],
-        action: { id: "cap", label: "Pick the Thinking Cap" }
+        ]
     },
     {
         icon: "fa-server", name: "DeepSeek and local models",
         tips: [
-            "<b>DeepSeek:</b> set up <b>Chomusuke</b>. DeepSeek likes to ignore the blocks, so let Chomusuke write the blocks and World State updates in a call after the reply (Chomusuke tab, Blocks with World State). It can use the same connection as your story.",
-            "<b>Local models:</b> use Chomusuke the same way, so the model focuses on the story and the blocks are updated after."
+            "<b>DeepSeek:</b> set up <b>Chomusuke</b> and let the worker model do the memory work after the reply, so the story model keeps its attention on the story. It can use the same connection as your story.",
+            "<b>Local models:</b> use Chomusuke the same way."
         ],
         action: { id: "chomusuke", label: "Open Chomusuke" }
     }
@@ -49,20 +46,15 @@ export const CHOMUSUKE_SETUP_STEPS = [
     "Want Chomusuke on the same model (DeepSeek, local models)? You're done here: pick <b>Story</b> in step 5.",
     "For another model: in the same panel, connect the model Chomusuke should use (API, key, model, Connect), create a new connection profile again and name it <b>Chomusuke</b>. Then pick your <b>Story</b> profile again.",
     "In the <b>Chomusuke</b> tab, turn Chomusuke on, pick the profile under <b>Worker connection</b> and press <b>Test</b>.",
-    "Turn on the jobs you want it to do, for example <b>Blocks</b> with World State."
+    "Turn on the jobs you want it to do, for example the <b>memory summary</b>."
 ];
 
 const PRACTICES = [
-    "<b>Turn on only what your story needs.</b> Every block, tracker and helper adds to what the model reads each turn, and some add a call after every reply. Start with a preset, its thinking and two or three blocks, and add more when you miss them.",
-    "<b>Keep \"Hide old blocks from the AI\" on</b> (Blocks tab). The model gets the true values once instead of every old block in the chat.",
-    "<b>Sending several jobs to Chomusuke?</b> Turn on <b>Combine calls</b> in the Chomusuke tab: one call per reply instead of several."
+    "<b>Turn on only what your story needs.</b> Every helper adds to what the model reads each turn, and some add a call after every reply. Start with the preset, its thinking and the story's standing settings, and add more when you miss them.",
+    "<b>Keep the memory in the short term</b> until the story is long enough for the vault to be worth it: a summary of a summary loses the details a scene needs."
 ];
 
-/**
- * @param {{ onPickCap?: () => void }} opts  onPickCap picks the Thinking Cap
- *   for the current preset; the button is left out when it isn't given.
- */
-export async function openModelGuide({ onPickCap } = {}) {
+export async function openModelGuide() {
     const $root = $(`
         <div class="mgd">
             <div class="mgd-head">
@@ -80,7 +72,6 @@ export async function openModelGuide({ onPickCap } = {}) {
 
     let popup;
     const actions = {
-        cap: () => { popup.completeCancelled(); onPickCap(); },
         chomusuke: () => { popup.completeCancelled(); fireRefreshHook(REFRESH.SWITCH_TAB, "chomusuke"); }
     };
 
@@ -92,7 +83,7 @@ export async function openModelGuide({ onPickCap } = {}) {
                 <ul>${m.tips.map(t => `<li>${t}</li>`).join("")}</ul>
             </div>
         `);
-        if (m.action && (m.action.id !== "cap" || onPickCap)) {
+        if (m.action) {
             const $b = $(`<button type="button" class="menu_button mgd-action">${m.action.label} <i class="fa-solid fa-arrow-right"></i></button>`);
             $b.on("click", actions[m.action.id]);
             $card.append($b);

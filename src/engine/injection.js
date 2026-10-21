@@ -19,7 +19,6 @@ import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
 import { memEnsureSemanticQueryFresh } from "../features/memory/vectordb.js";
 import { escapeRegex } from "../utils/regex.js";
 import { buildBaseDict } from "./buildBaseDict.js";
-import { addThinkingNudge } from "./thinkingNudge.js";
 import { meguminAllSlotTriggers } from "../../data/slots.js";
 import { suiteEnabled } from "../core/power.js";
 import { backgroundJobNow, reviewBackgroundPrompt } from "./bgPrompts.js";
@@ -188,11 +187,6 @@ async function buildPromptInjection(data, type) {
             // Final Sweep: Collapse 3 or more blank lines into a standard double line break
             msg.content = msg.content.replace(/(?:\r?\n[ \t]*){3,}/g, '\n\n');
         }
-    }
-
-    // Thinking Cap: its rules again as the last thing the model reads.
-    if (addThinkingNudge(messages, localProfile.model)) {
-        console.debug(`[${extensionName}] Added the Thinking Cap's rules at the end of the prompt.`);
     }
 
     if (replacementsMade > 0 && !activeGenerationOrder) {

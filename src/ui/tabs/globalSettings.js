@@ -14,7 +14,7 @@ import { openBackgroundLog } from "../../engine/bgPrompts.js";
 
 // The version on the about card. One place, so it cannot fall out of step with
 // itself the way "v9" did once V10 shipped.
-const SUITE_VERSION = "V11";
+const SUITE_VERSION = "V12";
 
 // Where the "send Kazuma something" button points. Tally rather than Google Forms
 // for one reason: Google makes anyone uploading a file sign in and records their
@@ -29,7 +29,7 @@ const SUBMIT_FORM_URL = "https://tally.so/r/D46yNq";
 //
 // Spent the moment the tab is drawn -- nobody should have to hunt for what the
 // dot meant, and a dot that outlives its errand is just noise on the icon.
-const SETTINGS_NOTICE_ID = "submit-card-v10";
+const SETTINGS_NOTICE_ID = "submit-card-v12";
 
 export function hasUnseenSettingsNotice() {
     if (!SUBMIT_FORM_URL) return false;

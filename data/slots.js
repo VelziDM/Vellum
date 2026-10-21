@@ -46,7 +46,6 @@ const gate = (test, label, where) => ({ test, label, where });
 
 const GATE = {
     think:   gate(p => p.cotEnabled !== false, "Chain of Thought", "Preset & Thinking"),
-    dnratio: gate(p => !!(p.dnRatio && p.dnRatio.enabled), "Dialogue/Narration ratio", "Writing Style"),
 
     // The one gate keyed on the ENGINE rather than a switch the reader flips.
     // Every engine gets the "never write for {{user}}" rule except the Co-writer
@@ -100,10 +99,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "How characters act and what the model may decide on its own." },
     { key: "p6", trigger: "[[prompt6]]", structural: true, label: "Prompt 6", scope: "engine", group: "engine",
       hint: "The last of the engine's own instructions." },
-    { key: "A1", trigger: "[[AI1]]", structural: true, hidden: true, label: "Model Acknowledgement 1", scope: "engine", group: "engine",
-      advanced: true, hint: "A fake reply from the model, agreeing that it read the rules." },
-    { key: "A2", trigger: "[[AI2]]", structural: true, hidden: true, label: "Model Acknowledgement 2", scope: "engine", group: "engine",
-      advanced: true, hint: "The second fake acknowledgement." },
 
     // ── Reasoning ────────────────────────────────────────────────────────────
     { key: "cot", trigger: "[[COT]]", label: "Chain of Thought", scope: "engine", group: "reasoning",
@@ -123,14 +118,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       gate: GATE.notCoWriter,
       hint: "Sent on every engine except the Co-writer variants, which are built to write {{user}}. It lands in the preset's numbered final reminder list, so keep it written as a numbered line.",
       fallback: () => "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for." },
-    { key: "dnratio", trigger: "[[DNRATIO]]", label: "Dialogue / Narration Ratio", scope: "shared", group: "format",
-      gate: GATE.dnratio, hint: "How much of a reply should be speech versus description.",
-      fallback: () => "Ratio: Maintain a balance of 50% Dialogue and 50% Narration." },
-
-    // ── Computed from your settings. Overridable, but rarely worth it ────────
-    { key: "count", trigger: "[[count]]", label: "Word Count", scope: "auto", group: "global",
-      overridable: true, deprecated: true, where: "Preset & Thinking",
-      hint: "Superseded by Length in Story Config. Always sent empty unless you override it here." },
 
     // ── Filled live by a feature. Nothing to edit ────────────────────────────
     { key: null, trigger: "[[config]]", label: "Story Config", scope: "auto", group: "live", where: "Preset & Thinking",
@@ -139,8 +126,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "Archived summaries pulled from the vault for this turn." },
     { key: null, trigger: "[[Short-memory]]", label: "Short-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Recent chat kept verbatim." },
-    { key: null, trigger: "[[img1]]", label: "Image Rules", scope: "auto", group: "live", where: "Images",
-      hint: "Instructions for emitting image prompts." },
     { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",
       where: "Writing Style",
       hint: "Your writing style, wrapped differently depending on the engine generation." },
@@ -175,7 +160,10 @@ export function meguminAllSlotTriggers() {
         // lines it owned.
         "[[main]]", "[[OOC]]", "[[control]]",
         // The NPC Bank is gone too (its slot lines above were its only writers).
-        "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]"]
+        "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]",
+        // Gone with the generations: the acknowledgement lines, the word count,
+        // the dialogue/narration ratio and the image rules.
+        "[[AI1]]", "[[AI2]]", "[[count]]", "[[DNRATIO]]", "[[img1]]"]
         .forEach(t => out.add(t));
     // The bare-bracket spellings an older preset generation used.
     for (let i = 1; i <= 6; i++) out.add(`[prompt${i}]`);
@@ -186,7 +174,7 @@ export function meguminAllSlotTriggers() {
  * The slots buildBaseDict's override pass may take from an engine or from the
  * shared bucket.
  *
- * Structural slots are excluded. p1..p6 and AI1/AI2 are written a few lines
+ * Structural slots are excluded. p1..p6 are written a few lines
  * earlier by hand, and that code does more than a plain assignment: the p1..p6
  * loop also fills the bare-bracket twin [prompt1] that older presets use, and
  * it writes even when the value is empty so an unused tag still gets blanked.

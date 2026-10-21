@@ -70,15 +70,9 @@ export function initProfile() {
     }
 
     const defaults = {
-        mode: "balance",
+        mode: "prometheus",
         // Which engines have Enhanced Dialogue switched on, keyed by engine id.
         //
-        // Per engine rather than one flag, because the switch is drawn inside the
-        // engine card: a control that sits on the Ukiyo card and silently changes
-        // Shura's card too is lying about its own scope. Only the active engine's
-        // entry is ever read, so in practice a reader who never switches engines
-        // sees a single on/off.
-        enhancedDialogue: {},
         // The narrator voice is archived; the V7 module switches live on the
         // Preset & Thinking tab and seed their own keys.
         toggles: {},
@@ -103,11 +97,7 @@ export function initProfile() {
             era: "",
             notes: ""
         },
-        dnRatio: {
-            enabled: false,
-            dialogue: 50
-        },
-        model: "cot-v1-english",
+        model: "cot-prometheus-english",
         userNotes: "",
         customModes: [],
         thinkEffort: "unspecified",
@@ -160,6 +150,14 @@ export function initProfile() {
 
     if (!extension_settings[extensionName].profiles["default"]) {
         extension_settings[extensionName].profiles["default"] = JSON.parse(JSON.stringify(defaults));
+    } else {
+        // The template a fresh chat starts from. It was written when the
+        // generations still existed, so it can point at an engine and a chain of
+        // thought that are gone; the same repair the loaded profile gets below.
+        const tmpl = extension_settings[extensionName].profiles["default"];
+        const knownIds = hardcodedLogic.modes.map(m => m.id);
+        if (tmpl.mode && !knownIds.includes(tmpl.mode)) tmpl.mode = knownIds[0] || "prometheus";
+        if (tmpl.model && !hardcodedLogic.models.some(m => m.id === tmpl.model)) tmpl.model = defaults.model;
     }
 
     // ── PROFILE LOADING: Try exact keys first, then fuzzy match all stored chat-level keys ──
@@ -258,7 +256,7 @@ export function initProfile() {
     } else {
         if (localProfile.memoryCore.chunkSize === undefined) localProfile.memoryCore.chunkSize = 10;
     }
-    if (!localProfile.dnRatio) localProfile.dnRatio = defaults.dnRatio;    if (!localProfile.chomusuke) {
+    if (!localProfile.chomusuke) {
         localProfile.chomusuke = JSON.parse(JSON.stringify(defaults.chomusuke));
     } else {
         if (localProfile.chomusuke.enabled === undefined) localProfile.chomusuke.enabled = false;
@@ -280,6 +278,31 @@ export function initProfile() {
     if (localProfile.chomusuke) {
         delete localProfile.chomusuke.blockRoutes;
         delete localProfile.chomusuke.combine;
+    }
+    // The generations are gone. A profile that pointed at one of them now
+    // points at Prometheus, and a style card from a generation that no longer
+    // exists is dropped with its text.
+    //
+    // The custom copies are the reader's own: a clone of a V9 engine may still
+    // be selected, and it still counts as a known engine.
+    const knownModes = hardcodedLogic.modes.map(m => m.id);
+    const knownCustomModes = (extension_settings[extensionName].customModes || []).map(m => m.id);
+    if (localProfile.mode && !knownModes.includes(localProfile.mode) && !knownCustomModes.includes(localProfile.mode)) {
+        localProfile.mode = knownModes[0] || "prometheus";
+    }
+    if (localProfile.activeStyleId) {
+        const isOwnStyle = (localProfile.customStyles || []).some(s => s.id === localProfile.activeStyleId);
+        const isShippedStyle = hardcodedLogic.directStyles.some(ds => ds.id === localProfile.activeStyleId);
+        if (!isOwnStyle && !isShippedStyle) {
+            // The style went with its generation. The pointer dies with it, and
+            // so does the text, because that text WAS the generation's style --
+            // a style the reader wrote is in customStyles and is left alone.
+            localProfile.activeStyleId = null;
+            localProfile.aiRule = "";
+        }
+    }
+    if (localProfile.model && !hardcodedLogic.models.some(m => m.id === localProfile.model)) {
+        localProfile.model = defaults.model;
     }
     delete localProfile.worldState;
     // The blocks system is gone. Old profiles carried the stack order, the
@@ -309,11 +332,6 @@ export function initProfile() {
     // back before anything reads them. Runs after the patching above has guaranteed each
     // module container exists, so a profile saved before a module shipped is covered too.
     meguminRehydrateProfilePrompts(localProfile);
-
-    // A profile written before Enhanced Dialogue existed has no map at all.
-    if (!localProfile.enhancedDialogue || typeof localProfile.enhancedDialogue !== "object") {
-        localProfile.enhancedDialogue = {};
-    }
 
     // The Dev Mode overrides are gone with the Dev Mode. Old profiles carried
     // the map; nothing writes it any more.
