@@ -43,11 +43,3 @@ export let currentTab = 0;
 export function setCurrentTab(index) {
     currentTab = index;
 }
-
-// ── Unsaved-changes guard for the custom engine editor ───────────────────────
-// Set by the dev-mode editor, read by the modal close handler so closing with
-// edits pending prompts instead of silently discarding.
-export let isDevEngineDirty = false;
-export function setDevEngineDirty(dirty) {
-    isDevEngineDirty = dirty;
-}

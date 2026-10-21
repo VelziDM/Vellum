@@ -121,10 +121,6 @@ async function buildPromptInjection(data, type) {
 
     const dict = buildBaseDict();
 
-    if (localProfile.devOverrides) {
-        Object.keys(localProfile.devOverrides).forEach(key => { if (dict[key] !== undefined) dict[key] = localProfile.devOverrides[key]; });
-    }
-
     // --- THE ENVELOPE IS THE ONLY WAY IN ---
     // [[blocks]] carries every tracker block now. The per-block anchors are
     // blanked unconditionally: leaving them populated would emit each block

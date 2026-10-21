@@ -4,7 +4,7 @@
 // This is the same idea as MEGUMIN_BLOCK_REGISTRY, applied to the other half of
 // the system. A placeholder used to be declared in three hand-maintained lists:
 //
-//   1. a createOverrideBlock(...) call in ui/devmode.js       (the editor box)
+//   1. an editor box in the Dev Mode UI                       (the editor box)
 //   2. an entry in the overrides[] array in buildBaseDict.js  (the actual wiring)
 //   3. a string in the 60-tag cleanup array in injection.js   (the leak guard)
 //
@@ -14,8 +14,8 @@
 // silent. Everything is now derived from the one entry below.
 //
 // Adding a placeholder means adding ONE object here. If you find yourself
-// editing devmode.js or the cleanup list to introduce a slot, stop — the thing
-// you are about to hand-write is meant to be derived.
+// editing the cleanup list to introduce a slot, stop — the thing you are about
+// to hand-write is meant to be derived.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { models, modes } from "./database.js";
@@ -29,9 +29,8 @@ import { isCoWriterEngine } from "../src/core/engines.js";
 //         extension_settings[...].sharedFragments. No engine CONTAINS this
 //         text — they all leave the slot for the dictionary to fill — which is
 //         why one edit reaches stock V7 and your own clone alike.
-// auto    built at generation time by a feature. Read-only in Dev Mode unless
-//         the slot is marked overridable, in which case the editor offers an
-//         opt-in box that shadows the computed value.
+// auto    built at generation time by a feature. Read-only unless the slot is
+//         marked overridable, in which case it can be shadowed by a value.
 //
 export const SLOT_SCOPE = { ENGINE: "engine", SHARED: "shared", AUTO: "auto" };
 
@@ -202,33 +201,6 @@ export function meguminAllSlotTriggers() {
 export function meguminOverridableSlots() {
     return MEGUMIN_SLOT_REGISTRY.filter(s =>
         s.key && !s.structural && (s.scope !== "auto" || s.overridable));
-}
-
-/**
- * The add-ons: the slots Dev Mode lets you edit on their own, independently of
- * any engine. Shared fragments plus the handful of computed slots that accept
- * an override.
- *
- * Hidden slots are excluded. [[prompt2]] and [[main]] are used by exactly one
- * generation -- the V4/V5 engines flagged devLegacy -- and Dev Mode no longer
- * offers those for editing, so drawing their slots would be drawing controls
- * that can never apply to anything you can open. They stay in the registry
- * regardless, because the preset still contains both tags and the injector's
- * leak guard is derived from this same list.
- */
-export function meguminAddonSlots() {
-    return MEGUMIN_SLOT_REGISTRY.filter(s =>
-        !s.hidden && (s.scope === "shared" || (s.scope === "auto" && s.overridable)));
-}
-
-/** The slots an engine owns and Dev Mode draws inline. */
-export function meguminEngineSlots() {
-    return MEGUMIN_SLOT_REGISTRY.filter(s => !s.hidden && s.scope === "engine");
-}
-
-/** Engines Dev Mode offers as a starting point. */
-export function meguminIsDevEditableMode(mode) {
-    return !!mode && mode.devLegacy !== true;
 }
 
 export function meguminSlotByTrigger(trigger) {

@@ -14,57 +14,28 @@
 // by stock V7, stock V10 and a custom clone alike, without modifying any of
 // them — and clearing it drops every one of them straight back to the built-in.
 //
-// Resolution order, applied identically by the engine and by the Dev Mode UI:
+// Resolution order:
 //
 //     engine override  →  shared fragment  →  built-in default
 //
 // The engine override stays first only so that custom engines built before
-// this existed keep behaving exactly as they did. It is not the normal path:
-// Dev Mode does not create engine overrides for shared slots, it offers
-// "Reset to shared" to remove one.
+// this existed keep behaving exactly as they did.
 //
 // Storage is extension_settings, not the profile, because the ask was global:
 // one THINK for every character and every chat. localProfile would have scoped it
 // per chat/character, which is a different feature.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { extension_settings, saveSettingsDebounced } from "../st.js";
+import { extension_settings } from "../st.js";
 import { extensionName } from "./constants.js";
 import { localProfile } from "./state.js";
 
-/** The bucket, created on first read so callers never have to null-check it. */
-export function getSharedFragments() {
-    const store = extension_settings[extensionName];
-    if (!store) return {};
-    if (!store.sharedFragments) store.sharedFragments = {};
-    return store.sharedFragments;
-}
-
 /** A single fragment, or "" when the reader has not set one. */
-export function getSharedFragment(key) {
+function getSharedFragment(key) {
     if (!key) return "";
-    return getSharedFragments()[key] || "";
-}
-
-export function hasSharedFragment(key) {
-    return getSharedFragment(key).trim() !== "";
-}
-
-/**
- * Set or clear a fragment. Blank clears rather than storing an empty string —
- * an empty override and no override mean the same thing to the resolver, and
- * keeping the key would make "Customised" badges lie in the UI.
- */
-export function setSharedFragment(key, value) {
-    if (!key) return;
-    const bag = getSharedFragments();
-    if (!value || value.trim() === "") delete bag[key];
-    else bag[key] = value;
-    saveSettingsDebounced();
-}
-
-export function clearSharedFragment(key) {
-    setSharedFragment(key, "");
+    const store = extension_settings[extensionName];
+    if (!store || !store.sharedFragments) return "";
+    return store.sharedFragments[key] || "";
 }
 
 /**
@@ -97,16 +68,4 @@ export function resolveSlot(slot, engine) {
     try { builtin = (typeof slot.fallback === "function" ? slot.fallback(localProfile) : "") || ""; }
     catch { builtin = ""; }
     return { value: builtin, source: "builtin" };
-}
-
-/**
- * Does this engine carry its own value for a slot that is otherwise shared?
- * Only true for engines built before shared fragments existed, or imported
- * ones. Drives the "This engine overrides the shared version" notice.
- */
-export function engineShadowsShared(slot, engine) {
-    if (!slot || !slot.key || !engine) return false;
-    if (slot.scope !== "shared") return false;
-    const v = engine[slot.key];
-    return typeof v === "string" && v.trim() !== "";
 }

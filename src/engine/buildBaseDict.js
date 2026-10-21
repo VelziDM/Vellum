@@ -148,18 +148,18 @@ export function buildBaseDict(isTokenCount = false) {
         // itself, so the slot is blanked instead of skipped -- an unwritten tag
         // would survive as a literal "[[user]]" if the leak guard ever missed it.
         //
-        // It sits immediately above the override pass so a Dev Mode edit of the
-        // shared fragment still wins, exactly like every other shared slot.
+        // It sits immediately above the override pass so a shared fragment's
+        // value still wins, exactly like every other shared slot.
         dict["[[user]]"] = isCoWriterEngine(activeEngine)
             ? ""
             : "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for.";
 
         // Slot overrides, driven by MEGUMIN_SLOT_REGISTRY.
         //
-        // This used to be a hand-written overrides[] array duplicating the list
-        // of editor boxes in devmode.js. Every placeholder now declares itself
-        // once in data/slots.js, including the condition that gates it, so the
-        // editor and the engine cannot disagree about which slots exist or when
+        // This used to be a hand-written overrides[] array duplicating a list of
+        // editor boxes. Every placeholder now declares itself once in
+        // data/slots.js, including the condition that gates it, so the engine
+        // cannot disagree with the registry about which slots exist or when
         // they apply.
         //
         // Resolution is engine → shared → built-in (see core/sharedFragments).

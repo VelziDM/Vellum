@@ -25,7 +25,7 @@ export const models = [
  *
  * This mapping used to be an inline if/else chain inside the PRESETS tab's
  * click handler, which made it invisible to anything else that needed the same
- * answer -- and Dev Mode needs it, to fill in a clone's reasoning script. Two
+ * answer -- and a clone needs it, to fill in its reasoning script. Two
  * copies of a mapping like this drift the moment a generation is added.
  *
  * The language argument only matters for the generations that were translated;

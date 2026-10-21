@@ -324,7 +324,7 @@ function coWriter(base, id, label, color, patches) {
 //
 // The swap is textual and deliberately dumb: whatever sits between the <dialogue>
 // tags in a prompt is replaced with this. That is what lets one switch serve all
-// four V10 engines, a Dev Mode clone of any of them, and any future engine
+// four V10 engines, a clone of any of them, and any future engine
 // carrying the same tag, without one of them declaring anything. A prompt with no
 // <dialogue> tag comes back untouched, so callers never have to test first.
 // -----------------------------------------------------------------------------

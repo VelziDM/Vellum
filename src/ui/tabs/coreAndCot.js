@@ -14,7 +14,6 @@ import { lockedStyleIdFor, isV7Engine, isV10Engine } from "../../core/engines.js
 import { saveProfileToMemory } from "../../core/profile.js";
 import { fireRefreshHook, REFRESH } from "../../core/refreshHooks.js";
 import { hardcodedLogic } from "../../../data/database.js";
-import { renderDevMode } from "../devmode.js";
 import { meguminCotForMode } from "../../../data/cot/index.js";
 import { buildStoryConfigSection } from "../../features/storyconfig/ui.js";
 import { countActiveConfigFields } from "../../features/storyconfig/config.js";
@@ -29,7 +28,7 @@ import { openModelGuide } from "../modelGuide.js";
 // nothing for any other generation. V10 only, because no other generation writes
 // that tag and the switch would be inert.
 //
-// Official presets and your own copies both draw preset cards, and a Dev Mode
+// Official presets and your own copies both draw preset cards, and a custom
 // copy of a V10 preset is still flagged isV10, so the switch has to appear on
 // both. Written once here: the first version was on the official card only, and
 // the feature disappeared the moment anybody copied a preset to edit it.
@@ -276,7 +275,7 @@ function pickPreset(m) {
         if (ds) localProfile.aiRule = ds.rule;
     }
     const currentLang = (localProfile.model && localProfile.model.includes("-")) ? localProfile.model.split("-").pop() : "english";
-    // The preset→thinking mapping lives in data/cot/index.js, so Dev Mode can
+    // The preset→thinking mapping lives in data/cot/index.js, so a custom
     // fill a copy's reasoning script from the same source.
     const targetCot = meguminCotForMode(m.id, currentLang);
     if (targetCot) localProfile.model = targetCot;
@@ -330,7 +329,7 @@ function renderPresetPage(c, { active, activeIsCustom, official, customModes, re
 
     const $grid = $(`<div class="mtab-card-grid ptx-grid"></div>`);
     if (presetFilter === "mine") {
-        if (!customModes.length) $grid.append(`<div class="igx-note">No presets of your own yet. Make or import one in Dev Mode.</div>`);
+        if (!customModes.length) $grid.append(`<div class="igx-note">No presets of your own yet.</div>`);
         customModes.forEach(m => $grid.append(presetCard(m, { custom: true, rerender })));
     } else {
         const list = presetFilter === "latest" ? official.filter(m => LATEST.includes(versionOf(m))) : official;
@@ -351,7 +350,6 @@ function presetCard(m, { custom, rerender }) {
                 <div class="ecard-title">
                     <span>${esc(m.label)}</span>
                     ${isSel ? `<span class="ecard-badge" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-check"></i> Active</span>` : ""}
-                    ${custom ? `<button type="button" class="ps-modern-btn secondary btn-quick-edit ptx-edit"><i class="fa-solid fa-pen"></i> Edit</button>` : ""}
                 </div>
                 <p class="ecard-desc" title="${esc(custom ? "" : (DESCRIPTIONS[m.id] || ""))}">${custom ? "One of your own presets." : (DESCRIPTIONS[m.id] || "")}</p>
                 ${badges ? `<div class="ptx-badges">${badges}</div>` : ""}
@@ -360,7 +358,6 @@ function presetCard(m, { custom, rerender }) {
         </div>
     `);
     wireEnhancedDialogue($card, m, rerender);
-    $card.find(".ptx-edit").on("click", e => { e.stopPropagation(); renderDevMode("editor", m.id, null, "tab"); });
     if (!isLocked) {
         $card.on("click", e => {
             if ($(e.target).closest(".btn-quick-edit, .ecard-opt").length) return;

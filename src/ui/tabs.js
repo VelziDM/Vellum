@@ -160,7 +160,6 @@ export function switchTab(index) {
     // The toggle is per tab, so its label has to follow the tab.
     setTimeout(updateGlobalSyncButton, 0);
 
-    $("#ps_btn_dev_mode").html(`<i class="fa-solid fa-code"></i> Dev`).css("color", "#a855f7");
 
     let isSameTab = (currentTab === index);
     const container = $("#ps_stage_content");

@@ -108,7 +108,6 @@ export function initProfile() {
         },
         model: "cot-v1-english",
         userNotes: "",
-        devOverrides: {},
         customModes: [],
         thinkEffort: "unspecified",
         customThinkEffort: "100",
@@ -310,8 +309,10 @@ export function initProfile() {
         localProfile.enhancedDialogue = {};
     }
 
-    if (localProfile.devOverrides && Object.keys(localProfile.devOverrides).length > 0) {
-        localProfile.devOverrides = {};
+    // The Dev Mode overrides are gone with the Dev Mode. Old profiles carried
+    // the map; nothing writes it any more.
+    if (localProfile.devOverrides) {
+        delete localProfile.devOverrides;
         saveSettingsDebounced();
     }
 

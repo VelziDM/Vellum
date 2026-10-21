@@ -24,8 +24,6 @@ import {
     _loadedProfileKey,
     currentTab,
     setCurrentTab,
-    isDevEngineDirty,
-    setDevEngineDirty,
 } from "./src/core/state.js";
 import {
     activeStoryPlanRequest,
@@ -65,7 +63,6 @@ import { handlePromptInjection } from "./src/engine/injection.js";
 import { suiteEnabled, setSuiteEnabled, syncPowerUI } from "./src/core/power.js";
 import { initDraggableButton, updateCharacterDisplay, discoverDefaultImages } from "./src/ui/launcher.js";
 import { tabsUI, switchTab, updateGlobalSyncButton, toggleTabGlobalSync } from "./src/ui/tabs.js";
-import { renderDevMode } from "./src/ui/devmode.js";
 
 // Refresh hooks for the features still living in this file. Each registration
 // moves into its own feature module as that feature is extracted — the memory
@@ -138,23 +135,6 @@ $("body").on("input", "#ps_main_current_rule", function () {
 $("body").off("click", "#ps_btn_power").on("click", "#ps_btn_power", function (e) {
     e.preventDefault();
     setSuiteEnabled(!suiteEnabled());
-});
-
-// -------------------------------------------------------------
-// DEV MODE: VISUAL ENGINE BUILDER
-// -------------------------------------------------------------
-// UNIFIED DEV BUTTON CLICK LISTENER
-$("body").off("click", "#ps_btn_dev_mode").on("click", "#ps_btn_dev_mode", function (e) {
-    e.preventDefault();
-    if ($(this).text().includes("Exit Dev")) {
-        if (isDevEngineDirty) {
-            if (!confirm("You have unsaved changes in your custom engine. Are you sure you want to exit? Changes will be lost.")) return;
-        }
-        setDevEngineDirty(false);
-        switchTab(0);
-    } else {
-        renderDevMode("landing");
-    }
 });
 
 // -------------------------------------------------------------

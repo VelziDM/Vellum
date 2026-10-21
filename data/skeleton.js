@@ -5,7 +5,7 @@
 //
 //     python tools/gen-skeleton.py
 //
-// Dev Mode's Document view draws this top to bottom, so the reader sees where a
+// The Document view draws this top to bottom, so the reader sees where a
 // [[slot]] actually lands rather than an invented running order. That matters
 // more than it sounds: [[MVU]] and [[THINK]] live in "Output RULES", which is
 // sent AFTER the chat history, while the old editor drew them in a flat pile
