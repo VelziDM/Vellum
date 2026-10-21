@@ -13,10 +13,7 @@ import { localProfile } from "../../core/state.js";
 import { saveProfileToMemory } from "../../core/profile.js";
 import { hardcodedLogic } from "../../../data/database.js";
 import { meguminCotForMode } from "../../../data/cot/index.js";
-import { buildStoryConfigSection } from "../../features/storyconfig/ui.js";
-import { countActiveConfigFields } from "../../features/storyconfig/config.js";
 import { card as pageCard, segmented, switchRow, field, esc } from "../controls.js";
-import { openModelGuide } from "../modelGuide.js";
 
 // ── Data ─────────────────────────────────────────────────────────────────
 
@@ -61,30 +58,24 @@ export function renderCoreAndCot(c) {
     if (localProfile.cotEnabled === undefined) localProfile.cotEnabled = true;
     const cot = parseCot(localProfile.model);
     const cotLabel = (COT_TYPES.find(t => t.id === cot.type) || {}).label || "None";
-    const cfgCount = countActiveConfigFields(localProfile.storyConfig);
 
     // ── Header + summary ──
     c.append(`
         <div class="mtab-header">
             <div class="mtab-header-left">
                 <div class="mtab-header-icon" style="background: linear-gradient(135deg, #f59e0b, #a855f7);"><i class="fa-solid fa-server"></i></div>
-                <div><h2>Preset & Thinking</h2><p>Choose the preset, how it thinks before it writes, and the story's standing settings.</p></div>
+                <div><h2>Preset & Thinking</h2><p>Choose the preset and how it thinks before it writes.</p></div>
             </div>
-            <button type="button" class="menu_button ptx-guide-btn" title="Which settings fit the model you use"><i class="fa-solid fa-compass"></i> Model guide</button>
         </div>
         <div class="igx-chips ptx-summary">
             <span class="igx-chip ok"><i class="fa-solid fa-server"></i> ${esc(active ? active.label : localProfile.mode)}</span>
             <span class="igx-chip ${localProfile.cotEnabled ? "warm" : ""}"><i class="fa-solid fa-brain"></i> Thinking: ${localProfile.cotEnabled ? esc(cotLabel) : "off"}</span>
-            <span class="igx-chip"><i class="fa-solid fa-sliders"></i> Story Config: ${cfgCount ? `${cfgCount} set` : "preset defaults"}</span>
         </div>
     `);
 
-    c.find(".ptx-guide-btn").on("click", () => openModelGuide({}));
-
     const pages = [
         { id: "preset", label: "Preset", icon: "fa-server" },
-        { id: "thinking", label: "Thinking", icon: "fa-brain" },
-        { id: "config", label: "Story Config", icon: "fa-sliders" }
+        { id: "thinking", label: "Thinking", icon: "fa-brain" }
     ];
     const $tabs = $(`<div class="igx-tabs" role="tablist"></div>`);
     pages.forEach(p => {
@@ -97,8 +88,7 @@ export function renderCoreAndCot(c) {
     const $page = $(`<div class="igx-page"></div>`);
     c.append($page);
     if (currentPage === "preset") renderPresetPage($page, { active, activeIsCustom, official, customModes, rerender });
-    else if (currentPage === "thinking") renderThinkingPage($page, { active, cot, rerender });
-    else $page.append(buildStoryConfigSection().show());
+    else renderThinkingPage($page, { active, cot, rerender });
 }
 
 // ── Preset page ──────────────────────────────────────────────────────────

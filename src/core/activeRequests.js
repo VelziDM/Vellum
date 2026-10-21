@@ -19,7 +19,3 @@
 export let activeMemorySummarizationRequest = null;
 export function setActiveMemorySummarizationRequest(v) { activeMemorySummarizationRequest = v; }
 
-// Manual "run this order" task: substituted into [[order]] placeholders.
-export let activeGenerationOrder = null;
-export function setActiveGenerationOrder(v) { activeGenerationOrder = v; }
-

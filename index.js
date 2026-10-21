@@ -27,7 +27,6 @@ import {
 } from "./src/core/state.js";
 import {
     activeMemorySummarizationRequest,
-    activeGenerationOrder,
 } from "./src/core/activeRequests.js";
 
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
@@ -105,17 +104,6 @@ import { tabsUI, switchTab } from "./src/ui/tabs.js";
 
 
 
-
-
-// -------------------------------------------------------------
-// AI RULE
-// -------------------------------------------------------------
-
-
-
-$("body").on("input", "#ps_main_current_rule", function () {
-    localProfile.aiRule = $(this).val(); saveProfileDebounced();
-});
 
 
 // -------------------------------------------------------------

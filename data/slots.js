@@ -120,15 +120,10 @@ export const MEGUMIN_SLOT_REGISTRY = [
       fallback: () => "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for." },
 
     // ── Filled live by a feature. Nothing to edit ────────────────────────────
-    { key: null, trigger: "[[config]]", label: "Story Config", scope: "auto", group: "live", where: "Preset & Thinking",
-      hint: "The <config> block built from your Story Config choices." },
     { key: null, trigger: "[[long-Memory]]", label: "Long-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Archived summaries pulled from the vault for this turn." },
     { key: null, trigger: "[[Short-memory]]", label: "Short-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Recent chat kept verbatim." },
-    { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",
-      where: "Writing Style",
-      hint: "Your writing style, wrapped differently depending on the engine generation." },
 ];
 
 // ── Derived views. Never hand-maintain these ────────────────────────────────
@@ -163,7 +158,9 @@ export function meguminAllSlotTriggers() {
         "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]",
         // Gone with the generations: the acknowledgement lines, the word count,
         // the dialogue/narration ratio and the image rules.
-        "[[AI1]]", "[[AI2]]", "[[count]]", "[[DNRATIO]]", "[[img1]]"]
+        "[[AI1]]", "[[AI2]]", "[[count]]", "[[DNRATIO]]", "[[img1]]",
+        // The Story Config and the writing style are gone with their panels.
+        "[[config]]", "[[aiprompt]]"]
         .forEach(t => out.add(t));
     // The bare-bracket spellings an older preset generation used.
     for (let i = 1; i <= 6; i++) out.add(`[prompt${i}]`);

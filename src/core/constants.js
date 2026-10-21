@@ -13,8 +13,3 @@ export const extensionName = "Vellum";
 // `scripts/extensions/third-party/${extensionName}`, which broke the moment the
 // folder was renamed.
 export const extensionFolderPath = new URL("../../", import.meta.url).pathname.replace(/\/$/, "");
-
-// The SillyTavern preset the writing-style generator loads. Left as it is: the
-// generator is being rewritten with the styles, and until then it keeps
-// working against the preset that is already in the reader's list.
-export const TARGET_PRESET_NAME = "Megumin Engine";

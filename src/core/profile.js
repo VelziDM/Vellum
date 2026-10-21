@@ -20,7 +20,6 @@ import { fireRefreshHook, REFRESH } from "./refreshHooks.js";
 import { meguminSparsifyProfilePrompts, meguminRehydrateProfilePrompts } from "../prompts/storage.js";
 import { DEFAULT_PROMPTS } from "../prompts/defaults.js";
 import { hardcodedLogic } from "../../data/database.js";
-import { normalizeStoryConfig, applyStoryConfigDefaults } from "../features/storyconfig/config.js";
 import { escapeRegex } from "../utils/regex.js";
 
 // Last chat_metadata stamp written, so an unchanged profile doesn't re-save.
@@ -76,29 +75,7 @@ export function initProfile() {
         // The narrator voice is archived; the V7 module switches live on the
         // Preset & Thinking tab and seed their own keys.
         toggles: {},
-        aiTags: [],
-        aiGeneratedOptions: [],
-        aiRule: "",
-        customStyles: [],
-        activeStyleId: null,
-        storyConfig: {
-            enabled: true,
-            genre: "",
-            tone: "",
-            pov: "",
-            pace: "",
-            length: "",
-            difficulty: "",
-            friction: "",
-            explicitness: "",
-            narratorPresence: "",
-            focus: "",
-            culture: "",
-            era: "",
-            notes: ""
-        },
         model: "cot-prometheus-english",
-        userNotes: "",
         customModes: [],
         thinkEffort: "unspecified",
         customThinkEffort: "100",
@@ -126,8 +103,7 @@ export function initProfile() {
             profileId: "",
             primaryProfileId: "",
             features: {
-                memory: true,
-                styleGen: true
+                memory: true
             }
         },
         // The state lives in the chat file (chat_metadata.megumin_state), never here.
@@ -224,30 +200,6 @@ export function initProfile() {
         if (localProfile[k] === undefined) localProfile[k] = defaults[k];
     });
     if (!localProfile.toggles) localProfile.toggles = {};
-    // Story Config (replaces the old standalone POV dropdown and the legacy word count)
-    if (!localProfile.storyConfig) localProfile.storyConfig = JSON.parse(JSON.stringify(defaults.storyConfig));
-    Object.keys(defaults.storyConfig).forEach(k => {
-        if (localProfile.storyConfig[k] === undefined) localProfile.storyConfig[k] = defaults.storyConfig[k];
-    });
-    normalizeStoryConfig(localProfile.storyConfig);
-    // One-time migration: the old POV dropdown becomes the config's pov field
-    if (localProfile.userPov && !localProfile.storyConfig.pov) {
-        localProfile.storyConfig.pov = localProfile.userPov;
-        localProfile.userPov = "";
-    }
-    // One-time migration: the old Target Word Count becomes the config's length field
-    if (localProfile.userWordCount && String(localProfile.userWordCount).trim() !== "" && !localProfile.storyConfig.length) {
-        const legacyType = localProfile.userWordCountType === "min" ? "minimum" : "maximum";
-        localProfile.storyConfig.length = `${legacyType} ${String(localProfile.userWordCount).trim()} words`;
-        localProfile.userWordCount = "";
-    }
-    // AFTER the two legacy migrations, never before: seeding pov would fill the very
-    // field `if (!localProfile.storyConfig.pov)` tests, and an upgrading reader would
-    // silently lose the POV they had set on the old dropdown.
-    //
-    // The block is always injected now, so its three standing fields ship set rather
-    // than blank. Only fills what is empty, so a reader who picked something keeps it.
-    applyStoryConfigDefaults(localProfile.storyConfig);
     if (localProfile.memoryCore && localProfile.memoryCore.customPromptsEnabled === undefined) localProfile.memoryCore.customPromptsEnabled = false;
     if (!localProfile.memoryCore) {
         localProfile.memoryCore = defaults.memoryCore;
@@ -262,8 +214,7 @@ export function initProfile() {
         if (localProfile.chomusuke.primaryProfileId === undefined) localProfile.chomusuke.primaryProfileId = "";
         if (!localProfile.chomusuke.features) {
             localProfile.chomusuke.features = {
-                memory: true,
-                styleGen: true
+                memory: true
             };
         }
     }
@@ -272,6 +223,7 @@ export function initProfile() {
     if (localProfile.chomusuke?.features) {
         delete localProfile.chomusuke.features.worldState;
         delete localProfile.chomusuke.features.blocks;
+        delete localProfile.chomusuke.features.styleGen;
     }
     if (localProfile.chomusuke) {
         delete localProfile.chomusuke.blockRoutes;
@@ -287,17 +239,6 @@ export function initProfile() {
     const knownCustomModes = (extension_settings[extensionName].customModes || []).map(m => m.id);
     if (localProfile.mode && !knownModes.includes(localProfile.mode) && !knownCustomModes.includes(localProfile.mode)) {
         localProfile.mode = knownModes[0] || "prometheus";
-    }
-    if (localProfile.activeStyleId) {
-        const isOwnStyle = (localProfile.customStyles || []).some(s => s.id === localProfile.activeStyleId);
-        const isShippedStyle = hardcodedLogic.directStyles.some(ds => ds.id === localProfile.activeStyleId);
-        if (!isOwnStyle && !isShippedStyle) {
-            // The style went with its generation. The pointer dies with it, and
-            // so does the text, because that text WAS the generation's style --
-            // a style the reader wrote is in customStyles and is left alone.
-            localProfile.activeStyleId = null;
-            localProfile.aiRule = "";
-        }
     }
     if (localProfile.model && !hardcodedLogic.models.some(m => m.id === localProfile.model)) {
         localProfile.model = defaults.model;
@@ -327,6 +268,18 @@ export function initProfile() {
     delete localProfile.banListCustomPromptsEnabled;
     // The dialogue/narration ratio is gone with its slot.
     delete localProfile.dnRatio;
+    // The Story Config and the writing style are gone with their panels.
+    delete localProfile.storyConfig;
+    delete localProfile.aiRule;
+    delete localProfile.activeStyleId;
+    delete localProfile.customStyles;
+    delete localProfile.userPov;
+    delete localProfile.userWordCount;
+    delete localProfile.userWordCountType;
+    // Dead keys from older features that nothing reads any more.
+    delete localProfile.aiTags;
+    delete localProfile.aiGeneratedOptions;
+    delete localProfile.userNotes;
 
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each
@@ -513,9 +466,6 @@ export function saveProfileToMemory() {
     }
 
     _profileSavePending = false;
-    const ruleBox = $("#ps_main_current_rule");
-    if (ruleBox.length > 0) { localProfile.aiRule = ruleBox.val(); }
-
     // Invalidate the optimized archived-set cache when profile changes
     if (localProfile?.memoryCore) {
         localProfile.memoryCore._archivedSet = null;
@@ -604,9 +554,6 @@ export function flushProfileSettingsToLoadedKey() {
     if (!_profileSavePending) return;
     if (!_loadedProfileKey) return;
     if (!localProfile || !extension_settings[extensionName]?.profiles) return;
-
-    const ruleBox = $("#ps_main_current_rule");
-    if (ruleBox.length > 0) { localProfile.aiRule = ruleBox.val(); }
 
     // The same reset the full save does. The archived-set cache is a Set, which
     // JSON.stringify turns into `{}`; every stored profile holds null there, so

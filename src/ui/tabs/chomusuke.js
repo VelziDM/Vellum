@@ -17,7 +17,19 @@ import {
 } from "../../engine/tasks.js";
 import { generateQuietPrompt } from "../../st.js";
 import { card, esc } from "../controls.js";
-import { CHOMUSUKE_SETUP_STEPS, CHOMUSUKE_SETUP_NOTE } from "../modelGuide.js";
+
+// How to set Chomusuke up, in the reader's words. It used to live in the model
+// guide popup, which went with the guide button.
+export const CHOMUSUKE_SETUP_NOTE = "<b>Before you start:</b> when you save a profile, <b>uncheck Settings Preset and Regex Preset</b>. Otherwise the chat reloads every time Chomusuke switches. Already have profiles saved with them? Make new ones the same way.";
+
+export const CHOMUSUKE_SETUP_STEPS = [
+    "Open SillyTavern's <b>API Connections</b> panel (the plug icon in the top bar).",
+    "Connect your story model as usual. Then, at the top of the panel under <b>Connection Profile</b>, click <b>Create a new connection profile</b> (the page with a +), name it <b>Story</b> and save. Keep this profile picked while you play.",
+    "Want Chomusuke on the same model (DeepSeek, local models)? You're done here: pick <b>Story</b> in step 5.",
+    "For another model: in the same panel, connect the model Chomusuke should use (API, key, model, Connect), create a new connection profile again and name it <b>Chomusuke</b>. Then pick your <b>Story</b> profile again.",
+    "In the <b>Chomusuke</b> tab, turn Chomusuke on, pick the profile under <b>Worker connection</b> and press <b>Test</b>.",
+    "Turn on the jobs you want it to do."
+];
 
 // Folds stay as they were across redraws.
 let advancedOpen = false;
@@ -27,14 +39,13 @@ let setupOpen = null;
 // When the job runs: occasional, only when that job fires.
 const OCCASIONAL = [
     { key: "memory", title: "Memory", icon: "fa-memory", color: "#3b82f6", desc: "Summarises older chat for the long-term vault." },
-    { key: "styleGen", title: "Writing Style generator", icon: "fa-wand-magic-sparkles", color: "#ec4899", desc: "Writes new writing styles from your tags." }
 ];
 
 function ensureConfig() {
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = {
             enabled: false, profileId: "", primaryProfileId: "",
-            features: { memory: true, styleGen: true },
+            features: { memory: true },
         };
     }
     const cfg = localProfile.chomusuke;

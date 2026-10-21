@@ -8,9 +8,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { generateQuietPrompt, eventSource, event_types, extension_settings, isGenerating, getContext, online_status, waitUntilCondition } from "../st.js";
-import { extensionName, TARGET_PRESET_NAME } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
-import { setActiveGenerationOrder } from "../core/activeRequests.js";
 import { warnChomusuke } from "./chomusukeNotice.js";
 
 /**
@@ -247,40 +245,5 @@ async function runOnWorker(featureKey, task, chomusuke, workerProfileId, jobs) {
         }
         if (workerSession === session) workerSession = null;
         endSession();
-    }
-}
-
-
-export async function useMeguminEngine(task, targetPreset = TARGET_PRESET_NAME) {
-    const selector = $("#settings_preset_openai");
-    const option = selector.find(`option`).filter(function () { return $(this).text().trim() === targetPreset; });
-    let originalValue = null;
-
-    if (option.length) {
-        originalValue = selector.val();
-        selector.val(option.val()).trigger("change");
-        toastr.info(`Switched to ${targetPreset} preset... Please wait.`);
-        await new Promise(r => setTimeout(r, 3000));
-    } else {
-        toastr.error(`"${targetPreset}" not found in OpenAI presets.`);
-        return;
-    }
-
-    try {
-        await task();
-    } catch (e) {
-        console.error(`[${extensionName}] AI Error:`, e);
-    } finally {
-        await new Promise(r => setTimeout(r, 500));
-        selector.val(originalValue).trigger("change");
-    }
-}
-
-export async function runMeguminTask(orderText) {
-    setActiveGenerationOrder(orderText);
-    try {
-        return await generateQuietPrompt({ prompt: "___PS_DUMMY___" });
-    } finally {
-        setActiveGenerationOrder(null);
     }
 }

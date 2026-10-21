@@ -13,7 +13,6 @@ import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
 import { renderGlobalSettings } from "./tabs/globalSettings.js";
-import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
 import { renderChomusuke } from "./tabs/chomusuke.js";
 
@@ -24,13 +23,11 @@ import { renderChomusuke } from "./tabs/chomusuke.js";
 export const tabsUI = [
     { id: "preset", title: "Preset & Thinking", sub: "Choose the preset, how it thinks, and the story's standing rules.", icon: "fa-server", render: renderCoreAndCot },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
-    { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
     { id: "settings", bottom: true, title: "Settings", sub: "Extension preferences and about info.", icon: "fa-gear", render: renderGlobalSettings }
 ];
 
 export const DOCK_GROUPS = [
-    { id: "setup", title: "Story Setup", icon: "fa-sliders" },
     { id: "tools", title: "More Tools", icon: "fa-toolbox" }
 ];
 

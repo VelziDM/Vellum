@@ -23,7 +23,6 @@ import { localProfile } from "../core/state.js";
 import { isCoWriterEngine } from "../core/engines.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { hardcodedLogic } from "../../data/database.js";
-import { buildConfigBlock } from "../features/storyconfig/config.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
 import { meguminOverridableSlots, meguminSlotIsLive } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
@@ -44,21 +43,10 @@ export function buildBaseDict(isTokenCount = false) {
     ];
     dead.forEach(t => { dict[t] = ""; });
 
-    // Story Config (<config> block). Empty when the config is off or every field is on Default.
-    dict["[[config]]"] = buildConfigBlock(localProfile.storyConfig);
-
     // 2. STANDARD STAGE SELECTIONS (Stage 2, 4, 5, 6)
 
     // The narrator voice (the Persona tab) is archived, and so are the two
     // protocol lines it owned. Their tags are in the dead list above.
-    //
-    // POV moved out of the style library and into the Story Config block.
-    const povInjectionStr = "";
-
-    // The writing style. It is the reader's own voice, sent as it is.
-    if (localProfile.aiRule) {
-        dict["[[aiprompt]]"] = povInjectionStr + localProfile.aiRule;
-    }
 
     // Stage 6 Defaults (CoT Framework & Language)
     const modData = hardcodedLogic.models.find(m => m.id === localProfile.model);
@@ -98,26 +86,6 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[user]]"] = isCoWriterEngine(activeEngine)
             ? ""
             : "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for.";
-
-        // The writing style, when the engine's own text carries the anchor.
-        //
-        // An engine may write the style into its own prose ("JULIA is:
-        // [[aiprompt]]"). When it does, the style goes there and the
-        // [[aiprompt]] slot itself is emptied, so the style is sent once and
-        // not twice. When the engine does not carry the anchor, the slot keeps
-        // the style and the preset's own place for it does the work.
-        const styleText = dict["[[aiprompt]]"] || "";
-        if (styleText) {
-            let carried = false;
-            for (let i = 1; i <= 6; i++) {
-                const key = `[[prompt${i}]]`;
-                if (dict[key] && dict[key].includes("[[aiprompt]]")) {
-                    dict[key] = dict[key].split("[[aiprompt]]").join(styleText);
-                    carried = true;
-                }
-            }
-            if (carried) dict["[[aiprompt]]"] = "";
-        }
 
         // Slot overrides, driven by MEGUMIN_SLOT_REGISTRY.
         //
