@@ -569,7 +569,6 @@ export function saveProfileToMemory() {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
     }
-    }
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!
     }
@@ -623,7 +622,6 @@ export function flushProfileSettingsToLoadedKey() {
     if (profileToSave.memoryCore) {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
-    }
     }
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!

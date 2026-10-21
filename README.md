@@ -5,8 +5,6 @@ Running notes for the **beta** branch. Newest release first.
 This file is history only. For what the extension is and how to use it, see the
 README on the stable branch.
 
-**[→ Install / update](https://drive.google.com/file/d/16Ps0byP9zDDLJSX5fqNbFmq-DBTjPlMT/view)**
-
 ---
 
 > **Vellum is my own fork of Megumin Suite**, built for my own use: I kept the

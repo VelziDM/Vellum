@@ -26,8 +26,6 @@ import {
     setCurrentTab,
 } from "./src/core/state.js";
 import {
-    activeStoryPlanRequest,
-    activeBanListChat,
     activeMemorySummarizationRequest,
     activeGenerationOrder,
     isBackgroundGenerationActive,
@@ -398,6 +396,18 @@ jQuery(async () => {
                 }
 
         });
+        }
+
+        // The floating button opens the settings window; clicking the backdrop or
+        // the close button puts it away again, saving whatever was edited.
+        $("body").on("click", "#prompt-slot-fixed-btn", function () { initProfile(); updateCharacterDisplay(); switchTab(0); $("#prompt-slot-modal-overlay").fadeIn(250).css("display", "flex"); });
+        $("body").off("click", "#close-prompt-slot-modal, #prompt-slot-modal-overlay").on("click", "#close-prompt-slot-modal, #prompt-slot-modal-overlay", function (e) {
+            if (e.target === this) {
+                saveProfileToMemory();
+                $("#prompt-slot-modal-overlay").fadeOut(200);
+            }
+        });
+
         // ── QUICK GEN BUTTON (stub) ──
         // ponytail: image gen is out; the button stays visible so layout and muscle
         // memory keep working, and says so when pressed. Reattach the igManualGenerate
@@ -424,14 +434,6 @@ jQuery(async () => {
             e.stopPropagation();
             toastr.info("Image generation is not available in this build.", "Megumin Suite", { timeOut: 2000 });
         });
-
-        // ── MASTER BLOCK CARD ──
-        // Nothing is drawn mid-stream: a half-written envelope re-parsed on every
-        // token is wasted work and visible flicker, and the pass on
-        // CHARACTER_MESSAGE_RENDERED covers the finished reply anyway.
-        [
-            event_types.CHARACTER_MESSAGE_RENDERED,
-            event_types.MESSAGE_SWIPED,
 
         // ── FLUSH PENDING SAVES ON TAB HIDE / PAGE CLOSE ──
         // visibilitychange fires reliably on tab switch AND on close (before pagehide).
