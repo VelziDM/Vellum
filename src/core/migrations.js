@@ -97,9 +97,17 @@ export function migrateRemovedFeatureKeys() {
     let changed = false;
     const gs = store.globalSettings;
     if (gs) {
-        ["disableUtilityPrefill", "enableUtilityPrefill"].forEach(k => {
+        // The prefill switches, the two prompt previews, the background-prompt
+        // settings, the lorebook switch and the master switch are all gone with
+        // their features. The master switch is turned ON for anyone who had it
+        // off: it has no button any more, so a stored "off" would leave the
+        // extension silently doing nothing.
+        ["disableUtilityPrefill", "enableUtilityPrefill",
+            "promptPreview", "bgPreview", "bgPreviewJobs", "loreInTasks",
+            "settingsNoticeSeen"].forEach(k => {
             if (Object.prototype.hasOwnProperty.call(gs, k)) { delete gs[k]; changed = true; }
         });
+        if (gs.suiteEnabled === false) { gs.suiteEnabled = true; changed = true; }
     }
     if (store.globalSyncTabs) { delete store.globalSyncTabs; changed = true; }
     const profiles = store.profiles;

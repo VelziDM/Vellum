@@ -28,7 +28,6 @@ import {
 import {
     activeMemorySummarizationRequest,
     activeGenerationOrder,
-    isBackgroundGenerationActive,
 } from "./src/core/activeRequests.js";
 
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
@@ -54,7 +53,6 @@ import {
 import { memUpdateSemanticQueryDebounced, memEnsureSemanticQueryFresh } from "./src/features/memory/vectordb.js";
 import { buildBaseDict } from "./src/engine/buildBaseDict.js";
 import { handlePromptInjection } from "./src/engine/injection.js";
-import { suiteEnabled, setSuiteEnabled, syncPowerUI } from "./src/core/power.js";
 import { initDraggableButton, updateCharacterDisplay, discoverDefaultImages } from "./src/ui/launcher.js";
 import { tabsUI, switchTab } from "./src/ui/tabs.js";
 
@@ -125,12 +123,6 @@ $("body").on("input", "#ps_main_current_rule", function () {
 // -------------------------------------------------------------
 
 
-// Master switch (top bar). The Global Settings row wires its own click.
-$("body").off("click", "#ps_btn_power").on("click", "#ps_btn_power", function (e) {
-    e.preventDefault();
-    setSuiteEnabled(!suiteEnabled());
-});
-
 // -------------------------------------------------------------
 // DRAGGABLE FIXED BUTTON WITH SNAP-TO-VIEWPORT & PERSISTENCE
 // -------------------------------------------------------------
@@ -146,7 +138,6 @@ jQuery(async () => {
         const h = await $.get(`${extensionFolderPath}/example.html`);
         $("body").append(h);
         initDraggableButton();
-        syncPowerUI();
         $("body").append('<div id="ps-global-tooltip"></div>');
         // Profile level badge styles
         $("head").append(`<style>
@@ -242,17 +233,6 @@ jQuery(async () => {
                 dock.prepend('<div class="mobile-drawer-header"><h3><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;color:var(--gold)"></i>Navigation</h3></div>');
             }
 
-            // 4. Inject drawer footer with Reset at bottom of dock
-            if (dock.length && !dock.find(".mobile-drawer-footer").length) {
-                dock.append(`
-                    <div class="mobile-drawer-footer">
-                        <button class="mobile-drawer-footer-btn danger" id="mobile_reset">
-                            <i class="fa-solid fa-rotate-left"></i> Reset Profile
-                        </button>
-                    </div>
-                `);
-            }
-
             // 5. Bind events
             // Hamburger toggle
             container.off("click.mobileHamburger").on("click.mobileHamburger", ".mobile-hamburger", function (e) {
@@ -265,11 +245,6 @@ jQuery(async () => {
                 closeMobileDrawer();
             });
 
-            // Drawer footer buttons → trigger original buttons then close drawer
-            container.off("click.mobileReset").on("click.mobileReset", "#mobile_reset", function () {
-                closeMobileDrawer();
-                $("#ps_btn_reset").trigger("click");
-            });
         }
 
         // Tab click → switch tab AND close drawer on mobile
@@ -288,17 +263,6 @@ jQuery(async () => {
 
         // Also init if already open (for reload scenarios)
         setTimeout(initMobileDrawer, 500);
-
-        $("body").on("click", "#ps_btn_reset", function () {
-            if (confirm("Are you sure you want to completely reset this character's profile to the default template?")) {
-                // A save debounced by an edit made just before the click would fire ~500ms
-                // from now, after the delete, and write the old profile straight back under
-                // the same live key. Drop it first, the same way the chat switch does.
-                cancelDebounce(_saveProfileDebouncedInner);
-                const key = getCharacterKey() || "default"; delete extension_settings[extensionName].profiles[key]; saveSettingsDebounced();
-                initProfile(); switchTab(0); toastr.info("Profile has been reset to defaults.");
-            }
-        });
 
         $("body").on("click", "#ps_btn_save_close", function () { saveProfileToMemory(); $("#prompt-slot-modal-overlay").fadeOut(200); toastr.success("Workflow Configured & Applied Successfully!"); });
 
@@ -327,7 +291,7 @@ jQuery(async () => {
             });
             // Background Vectorization triggers for Semantic Mode
             // (not while the suite is switched off: each one is a network call)
-            const memQueryIfOn = (...args) => { if (suiteEnabled()) memUpdateSemanticQueryDebounced(...args); };
+            const memQueryIfOn = (...args) => { memUpdateSemanticQueryDebounced(...args); };
             eventSource.on(event_types.USER_MESSAGE_RENDERED, memQueryIfOn);
             eventSource.on(event_types.MESSAGE_EDITED, memQueryIfOn);
             eventSource.on(event_types.CHAT_CHANGED, memQueryIfOn);
@@ -358,8 +322,6 @@ jQuery(async () => {
             // REPLY ARRIVAL (reads, memory)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {
                 updateMemoryVisuals();
-                // Master switch off: nothing below runs (no reads, memory).
-                if (!suiteEnabled()) return;
 
                 // AUTO-TRIGGER MEMORY CORE
                 const mem = localProfile?.memoryCore;

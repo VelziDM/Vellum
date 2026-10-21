@@ -12,7 +12,7 @@ import { registerRefreshHook, REFRESH } from "../core/refreshHooks.js";
 import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
-import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
+import { renderGlobalSettings } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
 import { renderChomusuke } from "./tabs/chomusuke.js";
@@ -180,7 +180,6 @@ export function switchTab(index) {
 
     // Re-read every switch rather than only at build time: the dots are drawn once
     // and reused, so a notice spent this session has to be able to go out again.
-    $(`#dot_${tabIndex("settings")}`).toggleClass("has-notice", hasUnseenSettingsNotice());
 
     container.empty();
     container.off(".devDirty");

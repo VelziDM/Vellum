@@ -6,13 +6,13 @@
 // Everything it needs is already a module.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { extension_settings, substituteParams, Popup, POPUP_TYPE } from "../st.js";
+import { substituteParams } from "../st.js";
 import { getContext } from "../st.js";
 import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
 import {
-    activeMemorySummarizationRequest, activeWorldExtractRequest,
-    activeGenerationOrder, isBackgroundGenerationActive,
+    activeMemorySummarizationRequest,
+    activeGenerationOrder,
 } from "../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
@@ -20,24 +20,11 @@ import { memEnsureSemanticQueryFresh } from "../features/memory/vectordb.js";
 import { escapeRegex } from "../utils/regex.js";
 import { buildBaseDict } from "./buildBaseDict.js";
 import { meguminAllSlotTriggers } from "../../data/slots.js";
-import { suiteEnabled } from "../core/power.js";
-import { backgroundJobNow, reviewBackgroundPrompt } from "./bgPrompts.js";
 
-// Throttles the prompt-preview popup so token counting and rapid ST background
-// triggers can't stack popups. Read and written only by the injection handler.
-export let lastPromptPreviewTime = 0;
-
-// Every prompt goes through here. A background job's messages are built by
-// buildPromptInjection, then shown or logged (plan 013, engine/bgPrompts.js).
+// Every prompt goes through here: the placeholder dictionary is built and
+// written over the messages.
 export async function handlePromptInjection(data, type) {
-    const job = backgroundJobNow();
     await buildPromptInjection(data, type);
-    if (!job) return;
-    // Token counts and dry runs are not a call being sent.
-    if (type === "count" || type === "dry" || type === "dryRun" || data?.dryRun === true || data?.dry === true) return;
-    const messages = data?.messages || data?.chat || (Array.isArray(data) ? data : null);
-    if (!messages || !Array.isArray(messages) || !messages.length) return;
-    await reviewBackgroundPrompt(messages, job);
 }
 
 async function buildPromptInjection(data, type) {
@@ -46,17 +33,6 @@ async function buildPromptInjection(data, type) {
     // Utility prefills are gone with the Ban List: only the memory summary and
     // the style order still speak for themselves, and neither benefited.
     // (The old toggle lived under globalSettings.enableUtilityPrefill.)
-
-    // --- BACKGROUND EXTRACTION (Chomusuke side reads) ---
-    // The whole prompt was built in advance (e.g. renderNotebookWorkerPrompt).
-    if (activeWorldExtractRequest) {
-        messages.length = 0;
-        const r = activeWorldExtractRequest;
-        messages.push({ "role": "system", "content": r.system });
-        messages.push({ "role": "user", "content": r.user });
-        console.log(`[${extensionName}] 🎯 Injected the background extraction prompt.`);
-        return;
-    }
 
     // --- INJECT MEMORY SUMMARIZATION PROMPT ---
     if (activeMemorySummarizationRequest) {
@@ -188,63 +164,7 @@ async function buildPromptInjection(data, type) {
         }
     }
 
-    if (replacementsMade > 0 && !activeGenerationOrder) {
+    if (replacementsMade > 0) {
         console.log(`[${extensionName}] ✅ Executed ${replacementsMade} block replacements.`);
-    }
-
-    // --- PROMPT PREVIEW ---
-    const isBackgroundGen = isBackgroundGenerationActive();
-
-    // Prevent double-popups from Token Counting or rapid ST background triggers
-    const now = Date.now();
-    const isSpam = (now - lastPromptPreviewTime) < 2000;
-    
-    // FIX: ST executes "Dry Runs" whenever you change a chat or tweak a setting to recalculate token limits.
-    // We must ignore these so the preview doesn't pop up randomly!
-    const isSilentOrDry = type === "count" || type === "quiet" || type === "dry" || type === "dryRun" || data?.dryRun === true || data?.dry === true;
-
-    if (extension_settings[extensionName]?.globalSettings?.promptPreview && !isBackgroundGen && !isSilentOrDry && !isSpam) {
-        lastPromptPreviewTime = now; // Lock it immediately
-
-        let promptString = "";
-        messages.forEach(m => {
-            let contentStr = "";
-            if (typeof m.content === "string") contentStr = m.content;
-            else if (Array.isArray(m.content)) {
-                // Handle multimodal image data safely
-                contentStr = m.content.map(c => c.type === "text" ? c.text : "[BASE64 IMAGE DATA]").join("\n");
-            }
-            promptString += `========== [ ${m.role.toUpperCase()} ] ==========\n${contentStr}\n\n`;
-        });
-
-        const $content = $(`
-            <div style="display:flex; flex-direction:column; gap:10px; font-family: 'Inter', sans-serif;">
-                <div style="font-size: 0.85rem; color: var(--text-muted);">This is the exact payload being sent to the AI API.</div>
-                <textarea class="ps-modern-input" readonly style="height: 450px; resize: vertical; font-family: monospace; font-size: 0.75rem; padding: 10px; white-space: pre-wrap; background: rgba(0,0,0,0.5);"></textarea>
-            </div>
-        `);
-        $content.find("textarea").val(promptString);
-
-        const { Popup, POPUP_TYPE } = typeof getContext === "function" ? getContext() : window;
-        const popup = new Popup($content, POPUP_TYPE.CONFIRM, "Prompt Payload Preview", { okButton: "Send to AI", cancelButton: "Cancel", wide: true, large: true });
-
-        const confirmed = await popup.show();
-
-        if (!confirmed) {
-            messages.length = 0; // Empty the payload
-            toastr.info("Generation cancelled by user.");
-            
-            // FIX: Explicitly tell SillyTavern to abort to prevent Auto-Retry loops
-            if (typeof window.stopGeneration === 'function') {
-                window.stopGeneration();
-            }
-            // Fallback: visually click the stop buttons just in case
-            setTimeout(() => {
-                $("#mes_stop").trigger("click");
-                $("#send_but_sheld").trigger("click");
-            }, 10);
-            
-            return;
-        }
     }
 }

@@ -15,11 +15,6 @@
 // setters. See the long note in state.js for why.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// World State side-model extraction: { system, user, prefill } built by
-// renderWorldExtractPrompt. Set only for the length of one quiet generation.
-export let activeWorldExtractRequest = null;
-export function setActiveWorldExtractRequest(v) { activeWorldExtractRequest = v; }
-
 // Memory Core: the chunk text being summarised.
 export let activeMemorySummarizationRequest = null;
 export function setActiveMemorySummarizationRequest(v) { activeMemorySummarizationRequest = v; }
@@ -28,12 +23,3 @@ export function setActiveMemorySummarizationRequest(v) { activeMemorySummarizati
 export let activeGenerationOrder = null;
 export function setActiveGenerationOrder(v) { activeGenerationOrder = v; }
 
-// ── Is any non-roleplay generation running? ──────────────────────────────────
-// Used by the engine to suppress the prompt-preview popup during background work.
-export function isBackgroundGenerationActive() {
-    return !!(
-        activeMemorySummarizationRequest ||
-        activeWorldExtractRequest ||
-        activeGenerationOrder
-    );
-}

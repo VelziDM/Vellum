@@ -28,7 +28,6 @@ import { downloadJsonFile } from "../../utils/download.js";
 import { meguminCleanChatHistoryText } from "../../engine/chatText.js";
 import { runWithChomusuke } from "../../engine/tasks.js";
 import { warnChomusuke } from "../../engine/chomusukeNotice.js";
-import { suiteEnabled } from "../../core/power.js";
 import { memGetCachedKeywords, memExtractKeywords, memStringHash } from "./keywords.js";
 import {
     memGetCollectionId, memInsertToVectorDB, memDeleteFromVectorDB,
@@ -1545,7 +1544,6 @@ function memRealIndexMap(chat, context) {
 
 // Rule A: The Prompt Interceptor (STRICT)
 window.vellum_memory_intercept = function (chat, _contextSize, _abort, type) {
-    if (!suiteEnabled()) return;
     const mem = localProfile?.memoryCore;
     if (!mem?.enabled) return;
 

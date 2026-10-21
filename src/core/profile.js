@@ -140,8 +140,6 @@ export function initProfile() {
 
     if (!extension_settings[extensionName].globalSettings) {
         extension_settings[extensionName].globalSettings = {
-            promptPreview: false,
-            enableUtilityPrefill: false,
             saveMode: "character"
         };
     } else if (!extension_settings[extensionName].globalSettings.saveMode) {
