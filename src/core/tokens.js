@@ -30,11 +30,10 @@ export function updateLiveTokenCount() {
         "[[img1]]", "[[img2]]",
         "[[storyplan]]", "[[storytracker]]", "[[storytracker2]]",
         "[[banlist]]",
-        // Both injection paths are built on every pass and only one of them ever
-        // reaches the model, so counting both would roughly double the blocks.
-        // The envelope is assembled FROM the per-block tags, which are counted
-        // above, so skipping it here estimates the same payload either way.
-        "[[blocks]]"
+        // The blocks the state store asks the model for are not testimonial
+        // text the reader authors — they are extraction asks, counted nowhere
+        // else either ([[npc_dossier]] family above).
+        "[[blocks]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]", "[[notebook]]"
     ];
 
     Object.entries(dict).forEach(([key, value]) => {

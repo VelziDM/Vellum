@@ -134,7 +134,7 @@ export async function applyConnectionProfileById(profileId, timeoutMs = 10000) {
  * 
  * Guarantees primary connection profile restoration on completion or error.
  * 
- * @param {"memory"|"npc"|"banList"|"styleGen"|"worldState"|"test"} featureKey
+ * @param {"memory"|"npc"|"banList"|"styleGen"|"notebook"|"test"} featureKey
  * @param {() => Promise<any>} task
  * @param {{ force?: boolean, jobs?: string[] }} [options]  jobs: what a failure
  *        message names (a combined call covers several); default [featureKey].
@@ -192,7 +192,7 @@ export async function runWithChomusuke(featureKey, task, { force = false, jobs =
 
 let runningWorkerJob = null;
 
-/** The Chomusuke job running right now ("worldState", "imageGen"…), or null. */
+/** The Chomusuke job running right now ("notebook", "memory"…), or null. */
 export function chomusukeJobRunning() {
     return runningWorkerJob;
 }

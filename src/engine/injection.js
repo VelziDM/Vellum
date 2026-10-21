@@ -89,8 +89,8 @@ async function buildPromptInjection(data, type) {
         return;
     }
 
-    // --- WORLD STATE SIDE-MODEL EXTRACTION ---
-    // The whole prompt was built by the World State module (renderWorldExtractPrompt).
+    // --- BACKGROUND EXTRACTION (Chomusuke side reads: the notebook) ---
+    // The whole prompt was built in advance (e.g. renderNotebookWorkerPrompt).
     if (activeWorldExtractRequest) {
         messages.length = 0;
         const r = activeWorldExtractRequest;
@@ -99,7 +99,7 @@ async function buildPromptInjection(data, type) {
         if (!disablePrefill && r.prefill) {
             messages.push({ "role": "assistant", "content": r.prefill });
         }
-        console.log(`[${extensionName}] 🎯 Injected World State extraction prompt.`);
+        console.log(`[${extensionName}] 🎯 Injected the background extraction prompt.`);
         return;
     }
 

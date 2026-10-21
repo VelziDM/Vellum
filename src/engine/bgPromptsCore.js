@@ -7,8 +7,6 @@
 export const BG_JOBS = [
     { id: "memory", label: "Memory" },
     { id: "npc", label: "NPC Bank" },
-    { id: "world", label: "World State" },
-    { id: "blocks", label: "Blocks" },
     { id: "notebook", label: "The Notebook" },
     { id: "banlist", label: "Banned Phrases" },
     { id: "style", label: "Writing Style" }

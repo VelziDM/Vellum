@@ -20,10 +20,8 @@ import { fireRefreshHook, REFRESH } from "./refreshHooks.js";
 import { meguminSparsifyProfilePrompts, meguminRehydrateProfilePrompts } from "../prompts/storage.js";
 import { DEFAULT_PROMPTS } from "../prompts/defaults.js";
 import { hardcodedLogic } from "../../data/database.js";
-import { MEGUMIN_BLOCK_REGISTRY, meguminSyncLegacyBlockIds } from "../features/blocks/registry.js";
 import { NPC_DEFAULT_FIELDS, NPC_SYSTEM_ROLES } from "../features/npc/fields.js";
 import { npcRollbackHistoryFrom } from "../features/npc/updates.js";
-import { WORLD_SETTINGS_DEFAULTS } from "../state/index.js";
 import { normalizeStoryConfig, applyStoryConfigDefaults } from "../features/storyconfig/config.js";
 import { escapeRegex } from "../utils/regex.js";
 import { refreshSidePanel, refreshPresentBar } from "../sidepanel/panel.js";
@@ -113,36 +111,6 @@ export function initProfile() {
             enabled: false,
             dialogue: 50
         },
-        blocks: [],
-        // What sits inside the <Blocks> envelope, and in what order. `order` is
-        // membership as well as sequence: a block not listed is not emitted.
-        blockStack: {
-            order: [],
-            custom: [],
-            overrides: {}
-        },
-        // Fields for the stat blocks. Their templates are generated from these,
-        // so adding Jealousy or Mana is a setting, not a code change.
-        statBlocks: {
-            bonds: {
-                fields: [
-                    { id: "mood", label: "Mood", type: "text", hint: "emotional surface" },
-                    { id: "affection", label: "Affection", type: "meter", max: 100, start: 20 },
-                    { id: "trust", label: "Trust", type: "meter", max: 100, start: 30 },
-                    { id: "desire", label: "Desire", type: "meter", max: 100, start: 0 }
-                ]
-            },
-            sheet: {
-                fields: [
-                    { id: "hp", label: "HP", type: "meter", max: 100, start: 100 },
-                    { id: "stamina", label: "Stamina", type: "meter", max: 100, start: 100 },
-                    { id: "gold", label: "Gold", type: "number", start: 0 },
-                    { id: "status", label: "Status", type: "text", ownLine: true, hint: "conditions, or \"none\"" },
-                    { id: "skills", label: "Skills", type: "list", ownLine: true, hint: "Name rank, comma separated" },
-                    { id: "inventory", label: "Inventory", type: "list", ownLine: true, hint: "item, item xN, or \"nothing\"" }
-                ]
-            }
-        },
         model: "cot-v1-english",
         userNotes: "",
         devOverrides: {},
@@ -195,21 +163,14 @@ export function initProfile() {
                 memory: true,
                 npc: true,
                 banList: true,
-                styleGen: true,
-                // Off by default: when on, every reply costs one extra worker call.
-                worldState: false,
-                // Plan 009: Chomusuke writes the chosen blocks instead of the story model.
-                blocks: false
-            },
-            // Which blocks go to Chomusuke when the Blocks route is on.
-            blockRoutes: { bonds: true, sheet: true, chatter: true, cyoa: true }
+                styleGen: true
+            }
         },
-        // Settings only. The World State itself lives in the chat file
-        // (chat_metadata.megumin_state), never here.
-        worldState: { ...WORLD_SETTINGS_DEFAULTS },
-        // Plan 008: the story model reads Current Info, not its own old blocks.
+        // The state lives in the chat file (chat_metadata.megumin_state), never here.
+        // Plan 008 keeps working: the story model reads Current Info, not its own
+        // old blocks in the chat history.
         hideBlocksFromAI: true,
-        // Plan 010: the Author's Notebook. An engine with `notebook: true` turns it on anyway.
+        // The Author's Notebook. An engine with `notebook: true` turns it on anyway.
         notebook: { enabled: false }
     };
 
@@ -375,21 +336,6 @@ export function initProfile() {
         if (localProfile.memoryCore.chunkSize === undefined) localProfile.memoryCore.chunkSize = 10;
     }
     if (!localProfile.dnRatio) localProfile.dnRatio = defaults.dnRatio;
-    // World State: settings only. Profiles written before the state store kept
-    // the state itself here, per CHARACTER rather than per chat, which is how
-    // one chat's outfits vanished on reload. That copy is dropped; each chat's
-    // own messages are imported into its chat file instead.
-    if (!localProfile.worldState || typeof localProfile.worldState !== "object") {
-        localProfile.worldState = { ...WORLD_SETTINGS_DEFAULTS };
-    } else {
-        delete localProfile.worldState.current;
-        delete localProfile.worldState.history;
-        delete localProfile.worldState.compactEnabled;
-        delete localProfile.worldState.fullFreq;
-        for (const [k, v] of Object.entries(WORLD_SETTINGS_DEFAULTS)) {
-            if (localProfile.worldState[k] === undefined) localProfile.worldState[k] = v;
-        }
-    }
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = JSON.parse(JSON.stringify(defaults.chomusuke));
     } else {
@@ -401,28 +347,27 @@ export function initProfile() {
                 memory: true,
                 npc: true,
                 banList: true,
-                styleGen: true,
-                // Off by default: when on, every reply costs one extra worker call.
-                worldState: false
+                styleGen: true
             };
         }
     }
-    // A feature added after the profile was saved. World State starts OFF (it
-    // costs a worker call per reply). Set explicitly: the Chomusuke tab flips a
-    // toggle with `!value`, so a missing key would click to true, never to off.
-    if (localProfile.chomusuke?.features && localProfile.chomusuke.features.worldState === undefined) {
-        localProfile.chomusuke.features.worldState = false;
+    // Wave-off the keys of features that are gone. Inert: nothing reads them, and
+    // old presets and archived exports keep whatever hand-written text they carried.
+    if (localProfile.chomusuke?.features) {
+        delete localProfile.chomusuke.features.worldState;
+        delete localProfile.chomusuke.features.blocks;
     }
-    // "Combine calls": several Chomusuke jobs in one call. Both off by default.
-    if (localProfile.chomusuke && (!localProfile.chomusuke.combine || typeof localProfile.chomusuke.combine !== "object")) {
-        localProfile.chomusuke.combine = { all: false, worldFallback: false };
+    if (localProfile.chomusuke) {
+        delete localProfile.chomusuke.blockRoutes;
+        delete localProfile.chomusuke.combine;
     }
-    // "Side model" briefly lived in the Blocks tab's Updates list; that choice
-    // is now the Chomusuke World State route.
-    if (localProfile.worldState?.updateMode === "sidemodel") {
-        localProfile.worldState.updateMode = "inline";
-        if (localProfile.chomusuke?.features) localProfile.chomusuke.features.worldState = true;
-    }
+    delete localProfile.worldState;
+    // The blocks system is gone. Old profiles carried the stack order, the
+    // per-block switch array and the stat field lists; nothing reads any of it.
+    delete localProfile.blocks;
+    delete localProfile.blockStack;
+    delete localProfile.statBlocks;
+
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each
     // module container exists, so a profile saved before a module shipped is covered too.
@@ -448,38 +393,10 @@ export function initProfile() {
         }
     }
 
-    // Block stack. Built once from whatever the old per-block toggles said, so an
-    // upgrading profile keeps the exact blocks it already had, in a sensible
-    // order. localProfile.blocks stays written in parallel — it still drives the
-    // legacy per-tag injection path, and a downgrade must not wipe anyone's setup.
-    if (!localProfile.blockStack || !Array.isArray(localProfile.blockStack.order)) {
-        const order = [];
-        MEGUMIN_BLOCK_REGISTRY.forEach(b => {
-            // System blocks are never in the stack: they are appended at the end
-            // whenever their feature is on, and the reader does not arrange them.
-            if (b.system) return;
-            if (!(b.legacyIds || []).some(id => (localProfile.blocks || []).includes(id))) return;
-            if (b.preferFirst) order.unshift(b.id); else order.push(b.id);
-        });
-        localProfile.blockStack = { order, custom: [], overrides: {} };
-    }
     // A profile written before Enhanced Dialogue existed has no map at all.
     if (!localProfile.enhancedDialogue || typeof localProfile.enhancedDialogue !== "object") {
         localProfile.enhancedDialogue = {};
     }
-    if (!localProfile.statBlocks) localProfile.statBlocks = JSON.parse(JSON.stringify(defaults.statBlocks));
-    Object.keys(defaults.statBlocks).forEach(k => {
-        if (!localProfile.statBlocks[k] || !Array.isArray(localProfile.statBlocks[k].fields)) {
-            localProfile.statBlocks[k] = JSON.parse(JSON.stringify(defaults.statBlocks[k]));
-        }
-    });
-    if (!Array.isArray(localProfile.blockStack.custom)) localProfile.blockStack.custom = [];
-    if (!localProfile.blockStack.overrides) localProfile.blockStack.overrides = {};
-    // A profile written before system blocks were pinned can still be carrying
-    // them in the stack, where they would now show up twice.
-    const systemIds = MEGUMIN_BLOCK_REGISTRY.filter(b => b.system).map(b => b.id);
-    localProfile.blockStack.order = localProfile.blockStack.order.filter(id => !systemIds.includes(id));
-    meguminSyncLegacyBlockIds();
 
     if (localProfile.devOverrides && Object.keys(localProfile.devOverrides).length > 0) {
         localProfile.devOverrides = {};
@@ -814,10 +731,6 @@ export function saveProfileToMemory() {
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!
     }
-    if (profileToSave.worldState) {
-        delete profileToSave.worldState.current; // World State lives in the chat file
-        delete profileToSave.worldState.history;
-    }
 
     // Drop prompt text that matches DEFAULT_PROMPTS. Safe on profileToSave because it is
     // already a clone; localProfile keeps the full text the editor is bound to.
@@ -880,10 +793,6 @@ export function flushProfileSettingsToLoadedKey() {
     }
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!
-    }
-    if (profileToSave.worldState) {
-        delete profileToSave.worldState.current; // World State lives in the chat file
-        delete profileToSave.worldState.history;
     }
 
     meguminSparsifyProfilePrompts(profileToSave);

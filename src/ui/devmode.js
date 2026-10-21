@@ -116,14 +116,9 @@ const CHAT_HISTORY_INDEX = SKELETON.findIndex(c => c.id === "chatHistory");
 // Saying "not in preset" about one of those is a false alarm, and it is a
 // convincing one -- the tag genuinely is absent from every message.
 //
-//   blocks  registry.js reads dict[b.source] when assembling <Blocks>
 //   think   buildBaseDict wraps [[COT]] and delivers it inside [[THINK]]
 //
 const CARRIERS = {
-    blocks: {
-        tag: "[[blocks]]",
-        text: "Sent inside the <b>Blocks</b> section at the very end of the prompt, together with the other output blocks.",
-    },
     think: {
         tag: "[[THINK]]",
         text: "Wrapped in think tags and sent inside <b>Thinking Tags</b> — that is the tag your preset carries. "

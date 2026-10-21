@@ -25,7 +25,6 @@ export const TAB_SYNC_KEYS = {
     "Preset & Thinking": ["mode", "model", "cotEnabled", "thinkEffort", "customThinkEffort", "thinkingV2", "storyConfig", "enhancedDialogue"],
     "Persona": ["personality", "toggles"],
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
-    "Blocks": ["blockStack", "statBlocks", "blocks", "hideBlocksFromAI"],
     "The Notebook": ["notebook"],
     "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
     "NPC Bank": ["npcBank"],

@@ -21,7 +21,6 @@ import { renderNotebookTab } from "../features/notebook/ui.js";
 import { renderBanList } from "../features/banlist/ui.js";
 import { renderNpcBank } from "../features/npc/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
-import { renderBlocksTab } from "../features/blocks/ui.js";
 import { renderChomusuke } from "./tabs/chomusuke.js";
 
 // Dock order is array order. `group` puts a tab inside a folding group of the
@@ -32,7 +31,6 @@ import { renderChomusuke } from "./tabs/chomusuke.js";
 // line in RENAMED_TABS (core/migrations.js).
 export const tabsUI = [
     { id: "preset", title: "Preset & Thinking", sub: "Choose the preset, how it thinks, and the story's standing rules.", icon: "fa-server", render: renderCoreAndCot },
-    { id: "blocks", title: "Blocks", sub: "What goes in the block under each reply, in what order, and how it looks.", icon: "fa-cubes", render: renderBlocksTab },
     { id: "notebook", title: "The Notebook", sub: "The truths the story is hiding, the clues it plants, and when they come out.", icon: "fa-book", render: renderNotebookTab },
     { id: "npc", title: "NPC Bank", sub: "The characters the story has met, kept and tracked.", icon: "fa-address-book", render: renderNpcBank },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },

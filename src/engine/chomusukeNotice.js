@@ -12,8 +12,6 @@
 // What each job is called in a message (runWithChomusuke's feature keys and
 // the parts of a combined call).
 export const CHOMUSUKE_JOB_NAMES = {
-    worldState: "World State",
-    blocks: "Blocks",
     notebook: "The Notebook",
     memory: "the memory summary",
     npc: "the NPC Bank",
@@ -23,7 +21,7 @@ export const CHOMUSUKE_JOB_NAMES = {
 };
 
 // Jobs whose result has a card with a Read again button.
-const HAS_READ_AGAIN = new Set(["worldState", "blocks", "notebook"]);
+const HAS_READ_AGAIN = new Set(["notebook"]);
 
 const nameOf = job => CHOMUSUKE_JOB_NAMES[job] || job;
 
@@ -42,7 +40,7 @@ export function answerKind(raw) {
 
 /**
  * @param {"failed"|"empty"|"format"} kind
- * @param {string[]} jobs  feature keys (worldState, blocks, …)
+ * @param {string[]} jobs  feature keys (notebook, memory, …)
  * @param {{ error?: any, switchedBack?: boolean }} [opts]  switchedBack: Chomusuke had
  *        switched the connection and has switched it back
  * @returns {string}

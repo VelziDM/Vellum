@@ -17,7 +17,7 @@ import {
     runWithChomusuke,
 } from "../../engine/tasks.js";
 import { generateQuietPrompt } from "../../st.js";
-import { worldEnabled, notebookEnabled } from "../../state/index.js";
+import { notebookEnabled } from "../../state/index.js";
 import { card, esc } from "../controls.js";
 import { CHOMUSUKE_SETUP_STEPS, CHOMUSUKE_SETUP_NOTE } from "../modelGuide.js";
 
@@ -26,19 +26,8 @@ let advancedOpen = false;
 // null = not touched yet: open while there's no profile to pick.
 let setupOpen = null;
 
-const BLOCK_ROUTES = [
-    { id: "bonds", label: "Bonds", icon: "fa-heart" },
-    { id: "sheet", label: "Character Sheet", icon: "fa-shield-halved" },
-    { id: "chatter", label: "NPC Inner Chatter", icon: "fa-comments" },
-    { id: "cyoa", label: "CYOA choices", icon: "fa-list-check" }
-];
-
 // After every reply: each is a call on every reply while on (off by default).
-// Blocks covers World State too (it is a block in the Blocks tab): its chip is
-// the World State route, the other chips the Blocks route (plan 009).
 const PER_REPLY = [
-    { key: "blocks", title: "Blocks", icon: "fa-cubes", color: "#f43f5e", defaultOff: true,
-      desc: "Writes the blocks you tick after each reply, World State included. The story model stops writing them, so more of its reply goes to the story. World State is a call of its own; the other blocks share one." },
     { key: "notebook", title: "The Notebook", icon: "fa-book", color: "#8b5cf6", defaultOff: true,
       desc: "Notes the clues each reply showed, who found out a hidden truth, and what came out. The story model only writes new truths.",
       note: "I recommend keeping this one for the story model to handle." }
@@ -56,29 +45,21 @@ function ensureConfig() {
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = {
             enabled: false, profileId: "", primaryProfileId: "",
-            features: { memory: true, npc: true, banList: true, styleGen: true, worldState: false },
+            features: { memory: true, npc: true, banList: true, styleGen: true },
         };
     }
     const cfg = localProfile.chomusuke;
     if (!cfg.features) cfg.features = {};
-    if (!cfg.blockRoutes || typeof cfg.blockRoutes !== "object") cfg.blockRoutes = { bonds: true, sheet: true, chatter: true, cyoa: true };
     return cfg;
 }
 
-const worldRouted = cfg => cfg.features.worldState === true;
-const blockRouted = (cfg, id) => cfg.features.blocks === true && cfg.blockRoutes[id] !== false;
-const anyBlockRouted = cfg => worldRouted(cfg) || BLOCK_ROUTES.some(b => blockRouted(cfg, b.id));
-
-// Most routes are on unless switched off; a route that costs a call per reply
-// (defaultOff) is off unless switched on.
+// A route that costs a call per reply (defaultOff) is off unless switched on.
 const routeOn = (cfg, feat) => feat.defaultOff ? cfg.features[feat.key] === true : cfg.features[feat.key] !== false;
 
 /** Is the job itself switched on in its own tab? null = yes (or nothing to switch). */
 function featureOff(key) {
     const p = localProfile;
-    const stack = (p.blockStack && p.blockStack.order) || [];
     switch (key) {
-        case "blocks": return worldEnabled() || BLOCK_ROUTES.some(b => stack.includes(b.id)) ? null : { text: "None of these blocks are on", tab: "blocks" };
         case "notebook": return notebookEnabled() ? null : { text: "The Notebook is off", tab: "notebook" };
         case "memory": return p.memoryCore && p.memoryCore.enabled ? null : { text: "Memory is off", tab: "memory" };
         case "npc": return p.npcBank && p.npcBank.enabled ? null : { text: "NPC Bank is off", tab: "npc" };
@@ -93,13 +74,7 @@ function offChip(key) {
 
 /** How many Chomusuke calls a reply can cost right now. */
 function callsPerReply(cfg) {
-    const stack = (localProfile.blockStack && localProfile.blockStack.order) || [];
-    let n = 0;
-    // World State and the other blocks are separate calls.
-    if (worldRouted(cfg) && worldEnabled()) n++;
-    if (BLOCK_ROUTES.some(b => blockRouted(cfg, b.id) && stack.includes(b.id))) n++;
-    if (cfg.features.notebook === true && notebookEnabled()) n++;
-    return n;
+    return cfg.features.notebook === true && notebookEnabled() ? 1 : 0;
 }
 
 export function renderChomusuke(c) {
@@ -187,25 +162,16 @@ export function renderChomusuke(c) {
     const every = card("After every reply", "Each job here is one Chomusuke call on every reply while it is on.");
     every.append(`<div class="chx-cost"><i class="fa-solid fa-receipt"></i> <span>${cost}</span></div>`);
     PER_REPLY.forEach(feat => {
-        const isBlocks = feat.key === "blocks";
-        const on = isBlocks ? anyBlockRouted(cfg) : routeOn(cfg, feat);
+        const on = routeOn(cfg, feat);
         const $row = routeRow(feat, on, offChip(feat.key));
         $row.on("click", e => {
             if ($(e.target).closest(".chx-off").length) return;
-            if (isBlocks) {
-                // The row turns every block on or off; the chips pick single ones.
-                cfg.features.worldState = !on;
-                cfg.features.blocks = !on;
-                if (!on) BLOCK_ROUTES.forEach(b => { cfg.blockRoutes[b.id] = true; });
-            } else {
-                cfg.features[feat.key] = !on;
-            }
+            cfg.features[feat.key] = !on;
             saveProfileToMemory();
             // The cost line depends on these: redraw.
             redraw();
         });
         every.append($row);
-        if (isBlocks) every.append(blockChips(cfg, redraw));
     });
     c.append(every);
 
@@ -271,44 +237,4 @@ function routeRow(feat, on, chip) {
             <div class="ps-switch"></div>
         </div>
     `);
-}
-
-// Which blocks Chomusuke writes, one tick each. World State is its own route
-// (features.worldState); the rest are the Blocks route (features.blocks +
-// blockRoutes, plan 009).
-function blockChips(cfg, redraw) {
-    const stack = (localProfile.blockStack && localProfile.blockStack.order) || [];
-    const $chips = $(`<div class="chx-blocks"></div>`);
-    const worldOn = worldRouted(cfg);
-    const worldInStack = worldEnabled();
-    const $world = $(`<label class="chx-block ${worldOn ? "on" : ""} ${worldInStack ? "" : "is-off"}" title="${worldInStack ? "" : "World State isn't on in the Blocks tab, so there is nothing to read."}">
-        <input type="checkbox" ${worldOn ? "checked" : ""}/> <i class="fa-solid fa-thumbtack"></i> World State${worldInStack ? "" : " <small>(not on)</small>"}
-    </label>`);
-    $world.find("input").on("change", function () {
-        cfg.features.worldState = this.checked;
-        saveProfileToMemory();
-        redraw();
-    });
-    $chips.append($world);
-    BLOCK_ROUTES.forEach(b => {
-        const on = blockRouted(cfg, b.id);
-        const inStack = stack.includes(b.id);
-        const $chip = $(`<label class="chx-block ${on ? "on" : ""} ${inStack ? "" : "is-off"}" title="${inStack ? "" : "This block isn't on in the Blocks tab, so there is nothing to write."}">
-            <input type="checkbox" ${on ? "checked" : ""}/> <i class="fa-solid ${b.icon}"></i> ${b.label}${inStack ? "" : " <small>(not on)</small>"}
-        </label>`);
-        $chip.find("input").on("change", function () {
-            if (this.checked && cfg.features.blocks !== true) {
-                // The first block ticked turns the route on with just that block.
-                cfg.features.blocks = true;
-                BLOCK_ROUTES.forEach(x => { cfg.blockRoutes[x.id] = x.id === b.id; });
-            } else {
-                cfg.blockRoutes[b.id] = this.checked;
-                if (!BLOCK_ROUTES.some(x => cfg.blockRoutes[x.id] !== false)) cfg.features.blocks = false;
-            }
-            saveProfileToMemory();
-            redraw();
-        });
-        $chips.append($chip);
-    });
-    return $chips;
 }

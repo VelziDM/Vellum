@@ -9,7 +9,7 @@
 // Combine calls is on.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { generateQuietPrompt, substituteParams } from "../../st.js";
+import { generateQuietPrompt, substituteParams, getContext } from "../../st.js";
 import { runWithChomusuke } from "../../engine/tasks.js";
 import { warnChomusuke, answerKind } from "../../engine/chomusukeNotice.js";
 import { setActiveWorldExtractRequest } from "../../core/activeRequests.js";
@@ -17,10 +17,31 @@ import {
     notebookViaChomusuke, notebookBeginRead, notebookReadNotes, notebookFinishRead, notebookRecordMissing, notebookAbandonRead
 } from "../../state/index.js";
 import { renderNotebookWorkerPrompt } from "../../state/modules/notebook/worker.js";
-import { exchangeText, earlierText } from "../blocks/worker.js";
 import { meguminScheduleBlocksRefresh } from "../blocks/chat.js";
+import { meguminCleanChatHistoryText } from "../../engine/chatText.js";
 
 const sub = t => { try { return substituteParams(t); } catch (e) { return t; } };
+
+// The latest exchange: the user turn(s) just before the reply, then the reply.
+function exchangeText(index, replyText) {
+    const chat = getContext().chat || [];
+    let start = index;
+    while (start - 1 >= 0 && chat[start - 1] && (chat[start - 1].is_user || chat[start - 1].is_system)) start--;
+    const lines = chat.slice(start, index).filter(m => m && m.is_user)
+        .map(m => `${m.name}: ${meguminCleanChatHistoryText(m.mes)}`);
+    const reply = chat[index];
+    lines.push(`${reply ? reply.name : ""}: ${meguminCleanChatHistoryText(replyText)}`);
+    return lines.join("\n\n");
+}
+
+// The messages before the latest exchange, for context.
+function earlierText(index, count = 4) {
+    const chat = getContext().chat || [];
+    let start = index;
+    while (start - 1 >= 0 && chat[start - 1] && (chat[start - 1].is_user || chat[start - 1].is_system)) start--;
+    return chat.slice(0, start).filter(m => m && !m.is_system).slice(-count)
+        .map(m => `${m.name}: ${meguminCleanChatHistoryText(m.mes)}`).join("\n\n");
+}
 
 let queue = Promise.resolve();
 

@@ -73,7 +73,6 @@ import {
     _saveProfileDebouncedInner,
     pruneFutureData,
 } from "./src/core/profile.js";
-import { blocksReadForReply, NOT_A_REPLY as BLOCKS_NOT_A_REPLY } from "./src/features/blocks/worker.js";
 import { notebookReadForReply } from "./src/features/notebook/worker.js";
 import {
     memProcessPendingChunks,
@@ -86,7 +85,7 @@ import { npcParseUpdateBlocks, npcApplyUpdates } from "./src/features/npc/update
 import { renderNpcList } from "./src/features/npc/ui.js";
 import {
     stateOnMessageReceived, stateOnSwiped, stateOnSwipeDeleted, stateOnEdited, stateOnDeleted, stateOnChatLoaded,
-    setWorldStateChangedHook,
+    setWorldStateChangedHook, NOT_A_REPLY as BLOCKS_NOT_A_REPLY,
 } from "./src/state/index.js";
 import {
     meguminDecorateMessageBody, meguminRefreshBlocksInChat, meguminScheduleBlocksRefresh,
@@ -151,11 +150,8 @@ import { renderDevMode } from "./src/ui/devmode.js";
 
 // -------------------------------------------------------------
 // SIDE PANEL — Tab renderer
-// Pulls the in-chat tracker blocks (World State, NPC Inner Chatter,
-// Summary, NPC dossiers) out into a fixed side panel.
-// -------------------------------------------------------------
-// Pulls the in-chat tracker blocks (World State, NPC Inner Chatter,
-// Summary, NPC dossiers) out into a fixed side panel.
+// Pulls the in-chat tracker blocks (NPC dossiers, Summary) out into a
+// fixed side panel.
 // -------------------------------------------------------------
 
 
@@ -408,8 +404,8 @@ jQuery(async () => {
                 if (stateOnDeleted()) meguminScheduleBlocksRefresh();
             });
             // Handle swipe rewind & sync
-            // World State side-model reads land in the background; redraw the
-            // cards when one starts ("Reading…") and when it lands.
+            // Background reads (notebook) land in the store; redraw the cards
+            // when one starts ("Reading…") and when it lands.
             setWorldStateChangedHook(() => { meguminScheduleBlocksRefresh(); });
             // Send guard: SillyTavern waits for this handler before it talks to
             // the API, so a reply sent while Chomusuke has the worker profile
@@ -437,9 +433,9 @@ jQuery(async () => {
             eventSource.on(event_types.MESSAGE_EDITED, (mesId) => {
                 if (stateOnEdited(mesId)) meguminScheduleBlocksRefresh();
             });
-            // World State: stamp, reconcile and (once) import after the chat has
-            // loaded. Same deferral as initProfile, and dropped if the user has
-            // already moved on to another chat.
+            // State store: stamp, square with deletions made meanwhile once the
+            // chat has loaded. Same deferral as initProfile, and dropped if the
+            // user has already moved on to another chat.
             eventSource.on(event_types.CHAT_CHANGED, () => {
                 const chatAtEvent = getContext().chatId;
                 setTimeout(() => {
@@ -453,25 +449,16 @@ jQuery(async () => {
                 // Master switch off: nothing below runs (no reads, director, memory, NPC bank).
                 if (!suiteEnabled()) return;
 
-                // --- WORLD STATE ---
+                // --- NOTEBOOK / NPC BANK STATE STORES ---
+                // The store turns chat events into per-message records (notebook,
+                // NPC journal). Cards redraw when one lands.
                 try {
                     if (stateOnMessageReceived(receivedId, receivedType)) meguminScheduleBlocksRefresh();
                 } catch (e) {
-                    console.error("[Megumin-Suite] World State update failed", e);
+                    console.error("[Megumin-Suite] State store update failed", e);
                 }
 
-                // --- BLOCKS BY CHOMUSUKE (plan 009) ---
-                // Bonds, Sheet, Inner Chatter, CYOA the story model was not asked
-                // for: Chomusuke reads the reply and writes them. Queued after the
-                // World State read. Does nothing unless the Blocks route is on.
-                if (!BLOCKS_NOT_A_REPLY.has(receivedType)) {
-                    const chatNow = getContext().chat || [];
-                    const blocksIndex = typeof receivedId === "number" ? receivedId : chatNow.length - 1;
-                    blocksReadForReply(blocksIndex, { force: receivedType === "continue" })
-                        .catch(e => console.error("[Megumin-Suite] Blocks read failed", e));
-                }
-
-                // --- NOTEBOOK BY CHOMUSUKE (plan 010) ---
+                // --- NOTEBOOK BY CHOMUSUKE ---
                 // Clues, who learned what, what came out. Does nothing unless the
                 // Notebook route is on and the notebook has live truths.
                 if (!BLOCKS_NOT_A_REPLY.has(receivedType)) {

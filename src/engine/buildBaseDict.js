@@ -1,10 +1,10 @@
 // ────────────────────────────────────────────────────────────────────────────
 // Assembling the placeholder dictionary the preset is filled from.
 //
-// The top of the graph: it reads from every feature — blocks, story config,
-// NPC, memory — and nothing reads from it except the injector and the token
-// counter. That is why it moved last rather than first: extracting it early
-// would have made it import from index.js instead of from the features.
+// The top of the graph: it reads from every feature — the notebook, story
+// config, NPC, memory — and nothing reads from it except the injector and the
+// token counter. That is why it moved last rather than first: extracting it
+// early would have made it import from index.js instead of from the features.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { getContext, extension_settings, substituteParams } from "../st.js";
@@ -22,9 +22,8 @@ import { memGetCachedKeywords } from "../features/memory/keywords.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
 import { meguminOverridableSlots, meguminSlotIsLive, meguminModuleTrigger } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
-import { worldPromptBlock, statsPromptParts, notebookPromptBlock, notebookCurrentPhase } from "../state/index.js";
+import { notebookPromptBlock } from "../state/index.js";
 import { NOTEBOOK_CRAFT } from "../prompts/notebook.js";
-import { meguminCleanChatHistoryText } from "./chatText.js";
 
 export function buildBaseDict(isTokenCount = false) {
     const dict = {};
@@ -94,17 +93,6 @@ export function buildBaseDict(isTokenCount = false) {
         }
     }
 
-
-    // Stage 5 Defaults (Format Blocks)
-    localProfile.blocks.forEach(bId => {
-        if (bId === "summary") return;
-        // The UI handles the warning, so we allow the injection anyway:
-        // if (bId === "info" && localProfile.blocks.includes("mvu")) return;
-        // if (bId === "summary" && localProfile.memoryCore && localProfile.memoryCore.enabled) return;
-
-        const item = hardcodedLogic.blocks.find(b => b.id === bId);
-        if (item) dict[item.trigger] = item.content;
-    });
 
     // Stage 6 Defaults (CoT Framework & Language)
     const modData = hardcodedLogic.models.find(m => m.id === localProfile.model);
@@ -323,19 +311,10 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[prefill]]"] = dict["[[prefill]]"].replace(/\n<think>[\s\S]*/, "\n<think>\n<think>");
     }
 
-    if (dict["[[cyoa]]"]) dict["[[cyoa2]]"] = "[CYOA block here]"; else dict["[[cyoa2]]"] = "";
-    if (dict["[[infoblock]]"]) dict["[[infoblock2]]"] = "[World state block here]"; else dict["[[infoblock2]]"] = "";
-    if (dict["[[storytracker]]"]) dict["[[storytracker2]]"] = "[Story tracker here]"; else dict["[[storytracker2]]"] = "";
-    if (dict["[[npc_inner_chatter]]"]) dict["[[npc_inner_chatter2]]"] = "[Npc inner chatter here]"; else dict["[[npc_inner_chatter2]]"] = "";
-
-    // --- AUTHOR'S NOTEBOOK (plan 010) ---
-    // The craft of keeping it, for an engine that carries [[notebook]] in its
-    // text (so it is resolved early, below). Empty while the notebook is off,
-    // so the engine never talks about a notebook that isn't there, and
-    // empty for an engine that keeps its own notebook (V11): its own text
-    // carries the craft, and a preset holding [[notebook]] would say it twice.
     let notebookPhaseNow = "off";
-    try { notebookPhaseNow = notebookCurrentPhase(); } catch (e) { /* no chat */ }
+    try {
+        notebookPhaseNow = notebookCurrentPhase();
+    } catch (e) { /* no chat */ }
     dict["[[notebook]]"] = notebookPhaseNow === "off" || engineKeepsNotebook(activeEngine) ? "" : NOTEBOOK_CRAFT;
 
     // Resolve early-evaluated tokens inside all other strings to prevent them from being missed and then cleaned up
@@ -352,28 +331,24 @@ export function buildBaseDict(isTokenCount = false) {
     });
 
     // --- CURRENT WORLD STATE (continuity notes) ---
-    // Injected into [[infoblockcurrent]] above [[blocks]] once the story has a
-    // state on file. The state store owns it; see src/state/index.js.
+    // Injected into [[infoblockcurrent]] above <Blocks> so the model reads the
+    // notebook's truths instead of its own old blocks in the chat.
     // [[infoblockcorrent]] is an old misspelling some presets still carry.
-    //
-    // Plan 008: the same spot is "Current Info" — World State plus the Bonds the
-    // story needs right now, the player's sheet, and the last Inner Chatter and
-    // Story Tracker — so the model reads the true values here instead of its own
-    // old blocks in the chat. Each part only when its block is on.
-    const worldNotes = localProfile.blocks && localProfile.blocks.includes("info") ? worldPromptBlock() : "";
-    const currentInfo = buildCurrentInfo(worldNotes);
+    let currentInfo = "";
+    try {
+        const nb = notebookPromptBlock();
+        if (nb) currentInfo = [
+            "<Current_Info>",
+            "<!-- Where the story stands right now, before your reply: how the characters feel and what they know, per your Author's Notebook. Keep your reply consistent with it and carry these values forward. Never copy this section into your reply. -->",
+            "",
+            nb,
+            "</Current_Info>"
+        ].join("\n");
+    } catch (e) {
+        console.warn("[Megumin Suite] Current Info: could not read the notebook.", e);
+    }
     dict["[[infoblockcurrent]]"] = currentInfo;
     dict["[[infoblockcorrent]]"] = currentInfo;
-
-    // --- PER-BLOCK HEADERS ---
-    // The envelope carries its own header, once, above everything. These lines
-    // were written into the individual templates back when each block had to
-    // introduce itself, and inside the envelope they are noise.
-    ["[[infoblock]]", "[[npc_inner_chatter]]", "[[cyoa]]", "[[storytracker]]"].forEach(block => {
-        if (dict[block] && dict[block].trim() !== "") {
-            dict[block] = dict[block].replace(/# at the very end of the response put this block:\s*/gi, "");
-        }
-    });
 
     // --- 5. MEMORY CORE INJECTION ---
     // Initialize them as empty strings by default so the tags cleanly vanish if there are no memories
@@ -586,58 +561,18 @@ export function buildBaseDict(isTokenCount = false) {
     }
 
     // --- MASTER BLOCK ENVELOPE ---
-    // Built from the same per-block values the legacy path uses, so engine
-    // overrides, custom prompts and compact World State all still apply. Which of
-    // the two actually reaches the model is decided later, by whether the preset
-    // has a [[blocks]] anchor in it.
+    // The NPC Bank's slot lines, and the notebook's ask when it is on. Whether
+    // it reaches the model is decided later, by whether the preset has a
+    // [[blocks]] anchor in it.
     //
     // LAST, AND IT HAS TO BE LAST. The envelope reads the dict it is handed: a
-    // block's body comes from its `source` tag, and a conditional block asks
-    // `slotRequires` about a tag too. This used to sit above the Memory Core and
-    // NPC Bank sections, so every NPC tag it consulted was still empty and the
+    // conditional slot asks `slotRequires` about a tag ([[npc_dossier2]],
+    // [[npc_updates]]). This used to sit above the Memory Core and NPC Bank
+    // sections, so every NPC tag it consulted was still empty and the
     // <New_NPC> slot could never appear in the envelope no matter what the bank
     // was doing. Anything that populates a tag a block reads must run before
     // this line.
     dict["[[blocks]]"] = buildBlocksEnvelope(dict);
 
     return dict;
-}
-
-// The last few messages, blocks removed: whose bonds the story needs is read from these.
-function recentStoryText(count = 3) {
-    const chat = (getContext() && getContext().chat) || [];
-    const out = [];
-    for (let i = chat.length - 1; i >= 0 && out.length < count; i--) {
-        const m = chat[i];
-        if (!m || m.is_system) continue;
-        out.push(meguminCleanChatHistoryText(String(m.mes || "")));
-    }
-    return out.join("\n");
-}
-
-// [[infoblockcurrent]]: one <Current_Info> section, or "" when nothing is on file.
-function buildCurrentInfo(worldNotes) {
-    let parts = { bonds: "", sheet: "", chatter: "", tracker: "" };
-    try { parts = statsPromptParts({ recentText: recentStoryText() }); } catch (e) {
-        console.warn("[Megumin Suite] Current Info: could not read the kept blocks.", e);
-    }
-    let notebook = "";
-    try { notebook = notebookPromptBlock(); } catch (e) {
-        console.warn("[Megumin Suite] Current Info: could not read the notebook.", e);
-    }
-    const sections = [];
-    if (worldNotes) sections.push(worldNotes);
-    if (notebook) sections.push(notebook);
-    if (parts.bonds) sections.push(`<Bonds_Now>\n${parts.bonds}\n</Bonds_Now>`);
-    if (parts.sheet) sections.push(`<Character_Sheet_Now>\n${parts.sheet}\n</Character_Sheet_Now>`);
-    if (parts.chatter) sections.push(`<Last_Inner_Chatter>\n${parts.chatter}\n</Last_Inner_Chatter>`);
-    if (parts.tracker) sections.push(`<Last_Story_Tracker>\n${parts.tracker}\n</Last_Story_Tracker>`);
-    if (!sections.length) return "";
-    return [
-        "<Current_Info>",
-        "<!-- Where the story stands right now, before your reply: the world, how the characters feel about {{user}}, {{user}}'s sheet, and the last private thoughts and story notes. Keep your reply consistent with it and carry these values forward. Never copy this section into your reply. -->",
-        "",
-        sections.join("\n\n"),
-        "</Current_Info>"
-    ].join("\n");
 }

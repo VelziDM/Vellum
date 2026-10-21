@@ -18,10 +18,8 @@
 // you are about to hand-write is meant to be derived.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { blocks, models, modes } from "./database.js";
+import { models, modes } from "./database.js";
 import { isCoWriterEngine } from "../src/core/engines.js";
-
-const blockText = id => blocks.find(b => b.id === id)?.content || "";
 
 // ── Scopes ───────────────────────────────────────────────────────────────────
 //
@@ -49,10 +47,6 @@ const gate = (test, label, where) => ({ test, label, where });
 
 const GATE = {
     think:   gate(p => p.cotEnabled !== false, "Chain of Thought", "Preset & Thinking"),
-    block:   id => gate(p => (p.blocks || []).includes(id), null, "Blocks"),
-    chatter: gate(p => (p.blocks || []).includes("npc_inner_chatter")
-                    || (p.blocks || []).includes("npc_inner_chatter_v2"),
-                  "NPC Inner Chatter", "Blocks"),
     dnratio: gate(p => !!(p.dnRatio && p.dnRatio.enabled), "Dialogue/Narration ratio", "Writing Style"),
 
     // The one gate keyed on the ENGINE rather than a switch the reader flips.
@@ -140,22 +134,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "Added to the end of the built-in ban list. The built-in part lives in the preset and is not edited here.",
       fallback: () => "" },
 
-    // ── Shared fragments that happen to be output blocks ─────────────────────
-    { key: "info", trigger: "[[infoblock]]", carrier: "blocks", label: "World State Block", scope: "shared", group: "blocks",
-      gate: GATE.block("info"), hint: "The scene board printed under each reply.",
-      fallback: () => blockText("info") },
-    { key: "cyoa", trigger: "[[cyoa]]", carrier: "blocks", label: "Choice Block", scope: "shared", group: "blocks",
-      gate: GATE.block("cyoa"), hint: "The numbered options offered at the end of a reply.",
-      fallback: () => blockText("cyoa") },
-    { key: "npc_inner_chatter", trigger: "[[npc_inner_chatter]]", carrier: "blocks", label: "NPC Inner Chatter",
-      scope: "shared", group: "blocks", gate: GATE.chatter,
-      hint: "What the NPCs are privately thinking.",
-      fallback: () => blockText("npc_inner_chatter"),
-      presets: [
-          { label: "Default", value: () => blockText("npc_inner_chatter") },
-          { label: "Simple", value: () => blockText("npc_inner_chatter_v2") },
-      ] },
-
     // ── Computed from your settings. Overridable, but rarely worth it ────────
     { key: "count", trigger: "[[count]]", label: "Word Count", scope: "auto", group: "global",
       overridable: true, deprecated: true, where: "Preset & Thinking",
@@ -164,12 +142,12 @@ export const MEGUMIN_SLOT_REGISTRY = [
     // ── Filled live by a feature. Nothing to edit ────────────────────────────
     { key: null, trigger: "[[config]]", label: "Story Config", scope: "auto", group: "live", where: "Preset & Thinking",
       hint: "The <config> block built from your Story Config choices." },
-    { key: null, trigger: "[[infoblockcurrent]]", label: "Current World State", scope: "auto", group: "live", where: "Blocks",
-      hint: "The current compiled World State context on file, injected right above <Blocks> when in delta update mode." },
-    { key: null, trigger: "[[notebook]]", label: "Author's Notebook", scope: "auto", group: "live", where: "Blocks",
+    { key: null, trigger: "[[infoblockcurrent]]", label: "Current Info", scope: "auto", group: "live", where: "Notebook",
+      hint: "The notebook's truths on file, injected so the model reads them instead of its own old blocks." },
+    { key: null, trigger: "[[notebook]]", label: "Author's Notebook", scope: "auto", group: "live", where: "Notebook",
       hint: "How to keep the notebook's hidden truths. Empty while the notebook is off or paused." },
-    { key: null, trigger: "[[blocks]]", label: "Output Blocks", scope: "auto", group: "live", where: "Blocks",
-      hint: "The whole <Blocks> envelope, assembled from the blocks you switched on." },
+    { key: null, trigger: "[[blocks]]", label: "Output Blocks", scope: "auto", group: "live", where: "NPC Bank",
+      hint: "The <Blocks> envelope: the NPC Bank's slot lines, and the notebook's ask when it is on." },
     { key: null, trigger: "[[long-Memory]]", label: "Long-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Archived summaries pulled from the vault for this turn." },
     { key: null, trigger: "[[Short-memory]]", label: "Short-term Memory", scope: "auto", group: "live", where: "Memory",
@@ -208,7 +186,10 @@ export function meguminAllSlotTriggers() {
     // would leak them verbatim into the prompt — the strip pass keeps them
     // from ever reaching the model.
     ["[[death]]", "[[combat]]", "[[html]]", "[[dice]]", "[[Direct]]", "[[DN]]", "[[COLOR]]",
-        "[[onomato]]", "[[Language]]", "[[pronouns]]", "[[npc_events]]", "[[MVU]]"]
+        "[[onomato]]", "[[Language]]", "[[pronouns]]", "[[npc_events]]", "[[MVU]]",
+        // The blocks system is gone (its slot lines above); old presets still
+        // carrying these tags would leak them otherwise.
+        "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]"]
         .forEach(t => out.add(t));
     // The bare-bracket spellings an older preset generation used.
     for (let i = 1; i <= 6; i++) out.add(`[prompt${i}]`);
@@ -299,7 +280,6 @@ export const SLOT_GROUPS = [
     { id: "reasoning", label: "Reasoning" },
     { id: "systems", label: "Systems" },
     { id: "format", label: "Formatting" },
-    { id: "blocks", label: "Output Blocks" },
     { id: "global", label: "Built From Your Settings" },
     { id: "live", label: "Filled In Automatically" },
 ];
