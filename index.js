@@ -37,23 +37,6 @@ import {
     isBackgroundGenerationActive,
 } from "./src/core/activeRequests.js";
 
-import {
-    initSidePanel,
-    refreshSidePanel,
-    getSidePanelSettings,
-    applyInlineHidingChange,
-    applyPositionChange,
-    applyWidthChange,
-    applyEnabledChange,
-    applyModeChange,
-    applyScaleChange,
-    resetSectionLayout,
-    getOrderedSections,
-    getPresentBarSettings,
-    applyPresentBarChange,
-    refreshPresentBar,
-} from "./src/sidepanel/panel.js";
-
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
 import { meguminActiveDataIdentity, getCharacterKey, getRawAvatar, cleanGhostProfiles } from "./src/core/keys.js";
 import {
@@ -149,9 +132,7 @@ import { renderDevMode } from "./src/ui/devmode.js";
 
 
 // -------------------------------------------------------------
-// SIDE PANEL — Tab renderer
-// Pulls the in-chat tracker blocks (NPC dossiers, Summary) out into a
-// fixed side panel.
+// AI RULE
 // -------------------------------------------------------------
 
 
@@ -199,7 +180,6 @@ jQuery(async () => {
         migrateRenamedTabs();
         migrateUtilityPrefillFlag();
         dropLookResidue();
-        initSidePanel({ profileGetter: () => localProfile });
         const h = await $.get(`${extensionFolderPath}/example.html`);
         $("body").append(h);
         initDraggableButton();

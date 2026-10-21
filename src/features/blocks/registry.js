@@ -12,7 +12,6 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { localProfile } from "../../core/state.js";
-import { getSidePanelSettings } from "../../sidepanel/panel.js";
 import { notebookBlockRequest } from "../../state/index.js";
 import { NOTEBOOK_TAGS } from "../../state/modules/notebook/parse.js";
 
@@ -57,25 +56,6 @@ export const MEGUMIN_BLOCK_REGISTRY = [
         slotRequires: dict => Boolean(String(dict["[[npc_updates]]"] || "").trim())
     }
 ];
-
-// The blocks the side panel has taken over. When it is on with inline hiding,
-// a block it is already showing must not also sit in the chat card. Only the
-// mapped entries that still exist in the registry can be taken (the panel's
-// older sections — World State, the tracker — have nothing left to show).
-export const MEGUMIN_PANEL_SECTION_BY_BLOCK = {
-    newNpc: "newNpcs"
-};
-
-export function meguminBlocksTakenByPanel() {
-    let cfg = null;
-    try { cfg = getSidePanelSettings(); } catch (e) { return []; }
-    if (!cfg || !cfg.enabled || !cfg.hideInline) return [];
-
-    const sections = cfg.sections || {};
-    return Object.entries(MEGUMIN_PANEL_SECTION_BY_BLOCK)
-        .filter(([, sec]) => (sections[sec] ? sections[sec].visible !== false : true))
-        .map(([blockId]) => blockId);
-}
 
 // The renderer works from the registry, plus the notebook's card defs handed in
 // by the caller. Rebuilt per call to keep the export shape it always had.

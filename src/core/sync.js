@@ -32,9 +32,9 @@ export const TAB_SYNC_KEYS = {
     "Chomusuke": ["chomusuke"]
 };
 
-// These two are stored globally already, so there is nothing per-character to keep
+// These are stored globally already, so there is nothing per-character to keep
 // in step and the toggle has no meaning on them.
-export const TABS_ALREADY_GLOBAL = ["Side Panel", "Settings"];
+export const TABS_ALREADY_GLOBAL = ["Settings"];
 
 // ── Story Config's own opt-out ───────────────────────────────────────────────
 //

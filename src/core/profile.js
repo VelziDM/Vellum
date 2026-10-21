@@ -24,7 +24,6 @@ import { NPC_DEFAULT_FIELDS, NPC_SYSTEM_ROLES } from "../features/npc/fields.js"
 import { npcRollbackHistoryFrom } from "../features/npc/updates.js";
 import { normalizeStoryConfig, applyStoryConfigDefaults } from "../features/storyconfig/config.js";
 import { escapeRegex } from "../utils/regex.js";
-import { refreshSidePanel, refreshPresentBar } from "../sidepanel/panel.js";
 
 // Last chat_metadata stamp written, so an unchanged profile doesn't re-save.
 export let _lastSavedMetaStamp = "";
@@ -506,11 +505,6 @@ export function initProfile() {
     setLoadedProfileKey(chatLevelKey || "default");
     // Fresh profile in memory — nothing the user typed is waiting to be written.
     _profileSavePending = false;
-
-    // The side panel renders 50ms after CHAT_CHANGED but the profile only lands
-    // here at +200ms, so profile-fed sections would still show the previous chat.
-    try { refreshSidePanel(); } catch (e) { /* side panel may not be mounted yet */ }
-    try { refreshPresentBar(); } catch (e) { /* present bar may not be mounted yet */ }
 }
 
 export function pruneFutureData() {
@@ -745,7 +739,6 @@ export function saveProfileToMemory() {
     fireRefreshHook(REFRESH.TAB_PROPAGATE);
 
     fireRefreshHook(REFRESH.TOKEN_COUNT); // NEW: Update the UI whenever settings are saved!
-    try { refreshSidePanel(); } catch (e) { /* side panel may not be mounted yet */ }
 
     const saveInd = $("#ps_save_indicator");
     if (saveInd.length) {

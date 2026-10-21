@@ -306,9 +306,9 @@ function renderTreated(b, opts) {
 // confidently wrong.
 export function buildBlocksCard(blocks, opts = {}) {
     const doc = opts.document || document;
-    // `omit` is what the side panel has taken over. A block the panel is showing
-    // should not also be in the chat, and a block the panel is NOT showing has to
-    // stay here or it would be nowhere at all.
+    // `omit` is caller-supplied: block ids some other code is already showing.
+    // An omitted block should not also be in the chat, and a block nothing else
+    // is showing has to stay here or it would be nowhere at all.
     const omit = opts.omit || [];
     const shown = blocks.filter(b =>
         (b.def.visibility || "open") !== "hidden" && !omit.includes(b.def.id));
@@ -666,11 +666,9 @@ export function applyBlocksToMessage(root, mes, registry, opts = {}) {
     // react to our own DOM writes. Something else rebuilding the body wipes the
     // stamp with it, so the next pass rebuilds rather than skipping.
     //
-    // What is omitted has to be part of this. Turning the side panel on does not
-    // change a single character of the message, so a stamp made of the text alone
-    // still matched and every card was left exactly as it was — the blocks only
-    // moved out of the chat after something else forced a re-render, which is why
-    // it took a chat reload.
+    // What is omitted has to be part of this: an omit change re-arranges which
+    // blocks are in the card without touching the message text, so a stamp made
+    // of the text alone would still match and the card would never re-render.
     //
     // The World State board is drawn from the state store, not from the text, so
     // reverting a reply or editing the state changes the board without changing

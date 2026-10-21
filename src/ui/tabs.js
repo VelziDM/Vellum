@@ -14,7 +14,6 @@ import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
 import { renderPersonality, personaTabInUse } from "./tabs/personality.js";
-import { renderSidePanelTab } from "./tabs/sidePanelTab.js";
 import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderNotebookTab } from "../features/notebook/ui.js";
@@ -37,7 +36,6 @@ export const tabsUI = [
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
     { id: "banlist", group: "tools", title: "Banned Phrases", sub: "Find the phrases the AI keeps repeating and ban them.", icon: "fa-ban", render: renderBanList },
-    { id: "sidepanel", group: "tools", title: "Side Panel", sub: "Pop the tracker blocks out of the chat into a fixed side panel.", icon: "fa-table-columns", render: renderSidePanelTab },
     { id: "persona", group: "tools", title: "Persona", sub: "Define the personality.", icon: "fa-user-astronaut", render: renderPersonality, shown: personaTabInUse },
     { id: "settings", bottom: true, title: "Settings", sub: "Extension preferences and about info.", icon: "fa-gear", render: renderGlobalSettings }
 ];

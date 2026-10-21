@@ -3,14 +3,14 @@
 //
 // What is left to draw: the NPC Bank's New NPC / NPC Update panes, and — for a
 // reply Chomusuke read — the notebook card. The rest of the block system died
-// with the Blocks tab; the export names stay because index.js, the side panel
-// tab and the NPC flows are wired to them.
+// with the Blocks tab; the export names stay because index.js and the NPC
+// flows are wired to them.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { getContext } from "../../st.js";
 import { extensionName } from "../../core/constants.js";
 import { applyBlocksToMessage, clearBlocksFromMessage } from "../../blocks/render.js";
-import { meguminRenderRegistry, meguminBlocksTakenByPanel } from "./registry.js";
+import { meguminRenderRegistry } from "./registry.js";
 // One directed edge from the blocks feature to the NPC feature. No cycle:
 // nothing under features/npc/ imports the block card.
 import { npcDecorateUpdatePane } from "../npc/updateCard.js";
@@ -38,7 +38,7 @@ export function meguminDecorateMessageBody(bodyEl, mesText, msgIndex) {
             storeBlocks,
             // Drawn from the store, so a Revert changes the card without the text.
             extraStamp: typeof msgIndex === "number" ? notebookCardStamp(msgIndex) : "",
-            omit: meguminBlocksTakenByPanel()
+            omit: []
         });
         if (typeof msgIndex === "number") {
             // The card renderer stays generic — it knows nothing about NPCs. The
