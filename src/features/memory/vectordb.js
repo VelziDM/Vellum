@@ -220,7 +220,10 @@ export function memBuildQueryText() {
 
 export async function memUpdateSemanticQuery() {
     const mem = localProfile?.memoryCore;
-    if (!mem || mem.scannerEngine !== 'semantic' || !mem.longTermVault || mem.longTermVault.length === 0) {
+    // The memory is off: the vector store is not consulted at all. Without this
+    // the search still went out on every prompt for a reader who had switched
+    // the memory off but still had an old vault on disk.
+    if (!mem || !mem.enabled || mem.scannerEngine !== 'semantic' || !mem.longTermVault || mem.longTermVault.length === 0) {
         currentSemanticMatches = [];
         _matchesQueryText = null;
         return;
@@ -303,7 +306,8 @@ export const memUpdateSemanticQueryDebounced = debounce(memUpdateSemanticQuery, 
 // which do not change what is being asked — cost nothing.
 export async function memEnsureSemanticQueryFresh() {
     const mem = localProfile?.memoryCore;
-    if (!mem || mem.scannerEngine !== 'semantic') return;
+    if (!mem || !mem.enabled) return;
+    if (mem.scannerEngine !== 'semantic') return;
     if (!mem.longTermVault || mem.longTermVault.length === 0) return;
 
     const wanted = memBuildQueryText();

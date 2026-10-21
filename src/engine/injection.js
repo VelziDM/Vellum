@@ -22,7 +22,6 @@ import { buildBaseDict } from "./buildBaseDict.js";
 import { meguminAllSlotTriggers } from "../../data/slots.js";
 import { suiteEnabled } from "../core/power.js";
 import { backgroundJobNow, reviewBackgroundPrompt } from "./bgPrompts.js";
-import { loreForChat, loreForNames, loreBlock } from "../core/lore.js";
 
 // Throttles the prompt-preview popup so token counting and rapid ST background
 // triggers can't stack popups. Read and written only by the injection handler.
