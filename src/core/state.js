@@ -37,8 +37,8 @@ export function setLoadedProfileKey(key) {
 }
 
 // ── Which settings tab is open ───────────────────────────────────────────────
-// Written by switchTab(); read by the global-sync helpers and several render
-// functions that need to redraw only the tab currently on screen.
+// Written by switchTab(); read by several render functions that need to redraw
+// only the tab currently on screen.
 export let currentTab = 0;
 export function setCurrentTab(index) {
     currentTab = index;

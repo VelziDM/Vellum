@@ -33,55 +33,6 @@ export function cleanLegacySettings() {
     if (didClean) saveSettingsDebounced();
 }
 
-// Tab titles are the key of the global-sync map, so renaming a tab orphans whatever the
-// reader had set on it and their choice silently reverts to off. Every rename belongs in
-// this table.
-//
-// A rename carries the flag across; a tab SPLIT does not hand it to both halves. When
-// Story Config split, the <config> half moved onto PRESETS & COT and deliberately did
-// not inherit the flag: switching that on copies the engine and CoT choice into EVERY
-// stored profile, which is far more than the reader agreed to. Losing sync on one field
-// is one click to undo; overwriting every character is not.
-const RENAMED_TABS = [
-    ["Story Config", "Writing Style"],
-    ["Global Toggles & Blocks", "Global Toggles & Add Ons"],
-    // Plan 011: the dock cleanup. Runs after the line above, so the oldest
-    // name still lands on the newest.
-    ["PRESETS & COT", "Preset & Thinking"],
-    ["Global Toggles & Add Ons", "Language & Add-ons"],
-    // The Language & Add-ons tab is gone (then the Blocks tab too). Their sync
-    // checkboxes fold into tabs whose keys survive, or drop out entirely.
-    ["Language & Add-ons", "Preset & Thinking"],
-    ["BLOCKS", "Blocks"],
-    ["Blocks", "The Notebook"],
-    ["Dynamic Ban List", "Banned Phrases"],
-    ["Image Generation", "Images"],
-    ["NPCs Bank", "NPC Bank"],
-    ["Memory Core", "Memory"],
-    ["Global Settings", "Settings"],
-];
-
-export function migrateRenamedTabs() {
-    const store = extension_settings[extensionName];
-    if (!store || !store.globalSyncTabs) return;
-    const map = store.globalSyncTabs;
-    let moved = false;
-    RENAMED_TABS.forEach(([from, to]) => {
-        if (!Object.prototype.hasOwnProperty.call(map, from)) return;
-        if (!Object.prototype.hasOwnProperty.call(map, to)) map[to] = map[from];
-        delete map[from];
-        moved = true;
-    });
-    if (moved) saveSettingsDebounced();
-}
-
-// The utility prefill toggle was inverted: `disableUtilityPrefill` (opt out) became
-// `enableUtilityPrefill` (opt in, default off). Nothing reads the old key any more, and
-// a live key nothing reads is the trap localProfile.devOverrides already is -- so it is
-// deleted rather than left to be found and half-wired back up later.
-//
-// The value is deliberately NOT carried over. Someone who had switched the old one on
-// was disabling prefills, which is what the new default already does.
 // Looks (Image Gen character tags) live in each chat's file. One Beta build kept them in
 // settings.json for a day, and global sync copied that one chat's looks into every
 // profile; the copies are stale, never read any more, and only add weight.
@@ -101,9 +52,30 @@ export function dropLookResidue() {
     }
 }
 
-export function migrateUtilityPrefillFlag() {
-    const gs = extension_settings[extensionName] && extension_settings[extensionName].globalSettings;
-    if (!gs || !Object.prototype.hasOwnProperty.call(gs, "disableUtilityPrefill")) return;
-    delete gs.disableUtilityPrefill;
-    saveSettingsDebounced();
+// The utility prefill toggle, the Dynamic Ban List and the global-sync map are
+// gone. All three left live keys: the prefill switches in globalSettings, the
+// ban list's keys on every profile, and the map of "which tabs travel". Nothing
+// reads any of them; dead keys in settings.json are the trap
+// localProfile.devOverrides already was -- so they are deleted rather than left
+// to be found and half-wired back up later.
+export function migrateRemovedFeatureKeys() {
+    const store = extension_settings[extensionName];
+    if (!store) return;
+    let changed = false;
+    const gs = store.globalSettings;
+    if (gs) {
+        ["disableUtilityPrefill", "enableUtilityPrefill"].forEach(k => {
+            if (Object.prototype.hasOwnProperty.call(gs, k)) { delete gs[k]; changed = true; }
+        });
+    }
+    if (store.globalSyncTabs) { delete store.globalSyncTabs; changed = true; }
+    const profiles = store.profiles;
+    if (profiles) {
+        for (const p of Object.values(profiles)) {
+            ["banList", "banListBackend", "banListCustomPrompts", "banListCustomPromptsEnabled"].forEach(k => {
+                if (p && Object.prototype.hasOwnProperty.call(p, k)) { delete p[k]; changed = true; }
+            });
+        }
+    }
+    if (changed) saveSettingsDebounced();
 }

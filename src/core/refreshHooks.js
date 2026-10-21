@@ -77,10 +77,6 @@ export const REFRESH = {
     // sits above the profile layer.
     TOKEN_COUNT: "ui:tokenCount",
 
-    // Fired after a save so a tab marked "Global" re-broadcasts itself. Gated on
-    // the settings window being open, which is why it is UI and not core/sync.
-    TAB_PROPAGATE: "ui:propagateSyncedTab",
-
     // Redraw a settings tab. With no argument it redraws whichever is on screen,
     // which is what a tab does to itself after changing a setting that alters its
     // own layout; with an index it navigates.

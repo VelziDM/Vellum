@@ -1,12 +1,11 @@
 // -------------------------------------------------------------
 // CUSTOM PROMPT STORAGE (diff against DEFAULT_PROMPTS)
 // -------------------------------------------------------------
-// Editing one prompt key seeds the whole block from DEFAULT_PROMPTS and then
-// syncPromptsGlobally() broadcasts that block into EVERY stored profile. Written out
-// in full that costs (profile count x ~17KB): one install reached 99 profiles holding
-// 1.6MB of prompt text that was only 4 distinct values, and settings.json got big
-// enough to be a problem. Only the keys that actually differ from DEFAULT_PROMPTS are
-// stored; meguminFillPrompts() restores the rest on load, so every reader downstream
+// Editing one prompt key seeds the whole block from DEFAULT_PROMPTS and then stores
+// only the keys that actually differ from it. Written out in full that costs
+// (profile count x ~17KB): one install reached 99 profiles holding 1.6MB of prompt
+// text that was only 4 distinct values, and settings.json got big enough to be a
+// problem. meguminFillPrompts() restores the rest on load, so every reader downstream
 // still sees a complete block and no call site had to change.
 //
 // A key whose text equals the built-in default is dropped and re-derived from
@@ -85,7 +84,7 @@ export function meguminPromptBytes(prof) {
 }
 
 // Installs that predate the diff storage already hold a full prompt block in every
-// profile, because that is how syncPromptsGlobally used to write them. Fold them down
+// profile, because that is how the old global prompt sync used to write them. Fold them down
 // once on startup so an oversized settings.json repairs itself with no user action.
 //
 // Subtractive only, and only on text byte-identical to DEFAULT_PROMPTS. No profile is

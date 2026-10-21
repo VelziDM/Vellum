@@ -35,11 +35,7 @@ import {
 
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
 import { meguminActiveDataIdentity, getCharacterKey, getRawAvatar, cleanGhostProfiles } from "./src/core/keys.js";
-import {
-    TAB_SYNC_KEYS, TABS_ALREADY_GLOBAL, meguminGlobalSyncMap, meguminIsTabSynced,
-    applyTabKeysToAllProfiles, syncPromptsGlobally,
-} from "./src/core/sync.js";
-import { cleanLegacySettings, migrateRenamedTabs, migrateUtilityPrefillFlag, dropLookResidue } from "./src/core/migrations.js";
+import { cleanLegacySettings, migrateRemovedFeatureKeys, dropLookResidue } from "./src/core/migrations.js";
 import { meguminCompactStoredPrompts } from "./src/prompts/storage.js";
 import { chomusukeSessionPromise } from "./src/engine/tasks.js";
 import { renderPromptEditor } from "./src/ui/promptEditor.js";
@@ -62,7 +58,7 @@ import { buildBaseDict } from "./src/engine/buildBaseDict.js";
 import { handlePromptInjection } from "./src/engine/injection.js";
 import { suiteEnabled, setSuiteEnabled, syncPowerUI } from "./src/core/power.js";
 import { initDraggableButton, updateCharacterDisplay, discoverDefaultImages } from "./src/ui/launcher.js";
-import { tabsUI, switchTab, updateGlobalSyncButton, toggleTabGlobalSync } from "./src/ui/tabs.js";
+import { tabsUI, switchTab } from "./src/ui/tabs.js";
 
 // Refresh hooks for the features still living in this file. Each registration
 // moves into its own feature module as that feature is extracted — the memory
@@ -144,8 +140,7 @@ $("body").off("click", "#ps_btn_power").on("click", "#ps_btn_power", function (e
 jQuery(async () => {
     try {
         cleanLegacySettings();
-        migrateRenamedTabs();
-        migrateUtilityPrefillFlag();
+        migrateRemovedFeatureKeys();
         dropLookResidue();
         const h = await $.get(`${extensionFolderPath}/example.html`);
         $("body").append(h);
@@ -176,7 +171,6 @@ jQuery(async () => {
         $(".ps-breadcrumbs").hide();
         $("#ps_btn_prev, #ps_btn_next").hide();
 
-        $("body").off("click", "#btn_apply_tab_all").on("click", "#btn_apply_tab_all", toggleTabGlobalSync);
 
         $("body").on("mouseenter", ".ps-modern-tag", function () { const hint = $(this).attr("data-hint"); if (!hint) return; const title = $(this).text().trim(); $("#ps-global-tooltip").html(`<span class="ps-tooltip-title">${title}:</span> ${hint}`).addClass("visible"); });
         $("body").on("mouseenter", "#ps_live_token_count", function (e) {
@@ -247,13 +241,10 @@ jQuery(async () => {
                 dock.prepend('<div class="mobile-drawer-header"><h3><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:8px;color:var(--gold)"></i>Navigation</h3></div>');
             }
 
-            // 4. Inject drawer footer with Sync Global + Reset at bottom of dock
+            // 4. Inject drawer footer with Reset at bottom of dock
             if (dock.length && !dock.find(".mobile-drawer-footer").length) {
                 dock.append(`
                     <div class="mobile-drawer-footer">
-                        <button class="mobile-drawer-footer-btn sync-global" id="mobile_sync_global">
-                            <i class="fa-solid fa-earth-americas"></i> Global: ${meguminIsTabSynced((tabsUI[currentTab] || {}).title) ? "On" : "Off"}
-                        </button>
                         <button class="mobile-drawer-footer-btn danger" id="mobile_reset">
                             <i class="fa-solid fa-rotate-left"></i> Reset Profile
                         </button>
@@ -274,10 +265,6 @@ jQuery(async () => {
             });
 
             // Drawer footer buttons → trigger original buttons then close drawer
-            container.off("click.mobileSync").on("click.mobileSync", "#mobile_sync_global", function () {
-                closeMobileDrawer();
-                $("#btn_apply_tab_all").trigger("click");
-            });
             container.off("click.mobileReset").on("click.mobileReset", "#mobile_reset", function () {
                 closeMobileDrawer();
                 $("#ps_btn_reset").trigger("click");

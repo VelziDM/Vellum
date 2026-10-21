@@ -299,7 +299,7 @@ export function initProfile() {
     delete localProfile.toggles.ooc;
     delete localProfile.toggles.control;
     // The Dynamic Ban List is gone. Its keys die here on the live profile; the
-    // settings.json sweep is migrateUtilityPrefillFlag().
+    // settings.json sweep is migrateRemovedFeatureKeys().
     delete localProfile.banList;
     delete localProfile.banListBackend;
     delete localProfile.banListCustomPrompts;
@@ -560,11 +560,6 @@ export function saveProfileToMemory() {
 
     extension_settings[extensionName].profiles[key] = profileToSave;
     saveSettingsDebounced();
-
-    // A tab set to global copies itself out on every save. Hooking it here rather
-    // than on each control is what makes it true for every change, including the
-    // ones added later.
-    fireRefreshHook(REFRESH.TAB_PROPAGATE);
 
     fireRefreshHook(REFRESH.TOKEN_COUNT); // NEW: Update the UI whenever settings are saved!
 

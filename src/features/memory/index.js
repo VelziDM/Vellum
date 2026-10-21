@@ -20,7 +20,6 @@ import { getContext, generateQuietPrompt, Popup, POPUP_TYPE } from "../../st.js"
 import { localProfile, _loadedProfileKey } from "../../core/state.js";
 import { getCharacterKey, meguminActiveDataIdentity, setCollectionIdProvider } from "../../core/keys.js";
 import { saveProfileToMemory, saveProfileDebounced } from "../../core/profile.js";
-import { syncPromptsGlobally } from "../../core/sync.js";
 import { registerRefreshHook, REFRESH } from "../../core/refreshHooks.js";
 import { setActiveMemorySummarizationRequest } from "../../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../../prompts/index.js";
@@ -346,7 +345,6 @@ export function renderMemoryCore(c) {
         enabled: mem.customPromptsEnabled, // <-- NEW
         onToggle: (val) => { 
             mem.customPromptsEnabled = val; 
-            syncPromptsGlobally('memoryCore', 'customPromptsEnabled', val);
             saveProfileToMemory(); 
         },
         fields: [
@@ -358,13 +356,11 @@ export function renderMemoryCore(c) {
         onSave: (val, key) => {
             if (!mem.customPrompts) mem.customPrompts = JSON.parse(JSON.stringify(DEFAULT_PROMPTS.memoryCore));
             mem.customPrompts[key] = val;
-            syncPromptsGlobally('memoryCore', 'customPrompts', mem.customPrompts);
             saveProfileDebounced();
             return mem.customPrompts;
         },
         onReset: () => {
             mem.customPrompts = null;
-            syncPromptsGlobally('memoryCore', 'customPrompts', null);
             saveProfileToMemory();
         }
     });

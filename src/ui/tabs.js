@@ -9,7 +9,6 @@
 
 import { localProfile, currentTab, setCurrentTab } from "../core/state.js";
 import { registerRefreshHook, REFRESH } from "../core/refreshHooks.js";
-import { TAB_SYNC_KEYS, TABS_ALREADY_GLOBAL, meguminGlobalSyncMap, meguminIsTabSynced, applyTabKeysToAllProfiles } from "../core/sync.js";
 import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
@@ -22,8 +21,6 @@ import { renderChomusuke } from "./tabs/chomusuke.js";
 // dock; `bottom` pins it under the spacer; `shown()` hides it while it has
 // nothing to do. Find a tab by `id` (tabIndex), never by title or position:
 // titles are what the user reads and positions move when the dock is reordered.
-// The title is also the global-sync key (core/sync.js), so renaming one needs a
-// line in RENAMED_TABS (core/migrations.js).
 export const tabsUI = [
     { id: "preset", title: "Preset & Thinking", sub: "Choose the preset, how it thinks, and the story's standing rules.", icon: "fa-server", render: renderCoreAndCot },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
@@ -154,9 +151,7 @@ function refreshDockGroups() {
 export function switchTab(index) {
     $(".dock").show();
     $("#ps_btn_save_close").show();
-    $("#btn_apply_tab_all").show(); // Show on all tabs
     // The toggle is per tab, so its label has to follow the tab.
-    setTimeout(updateGlobalSyncButton, 0);
 
 
     let isSameTab = (currentTab === index);
@@ -201,85 +196,13 @@ export function switchTab(index) {
     updateLiveTokenCount();
 }
 
-export function toggleTabGlobalSync() {
-    const title = (tabsUI[currentTab] || {}).title;
-    if (!title) return;
-
-    if (TABS_ALREADY_GLOBAL.includes(title)) {
-        toastr.info(`${title} is stored globally already — it is the same on every character.`, "Megumin Suite");
-        return;
-    }
-    if (!TAB_SYNC_KEYS[title]) {
-        toastr.info("This tab has nothing to sync.", "Megumin Suite");
-        return;
-    }
-
-    const map = meguminGlobalSyncMap();
-    const next = !map[title];
-    map[title] = next;
-    saveSettingsDebounced();
-
-    if (next) {
-        const ok = applyTabKeysToAllProfiles(title);
-        if (!ok) {
-            map[title] = false;
-            saveSettingsDebounced();
-            toastr.warning("The panel is still showing the previous chat's settings. Reopen it and try again.", "Megumin Suite");
-            updateGlobalSyncButton();
-            return;
-        }
-        toastr.success(`${title} now applies to every character. Changes here follow automatically.`, "Megumin Suite");
-    } else {
-        toastr.info(`${title} is back to per-character.`, "Megumin Suite");
-    }
-
-    updateGlobalSyncButton();
-}
-
-export function meguminPropagateTabIfSynced() {
-    // Only while the settings window is open: a save from a background feature
-    // (an NPC banking itself, a summary landing) is not an edit to a tab.
-    if (!$("#btn_apply_tab_all").length) return;
-    const title = (tabsUI[currentTab] || {}).title;
-    if (!meguminIsTabSynced(title)) return;
-    applyTabKeysToAllProfiles(title);
-}
-
-export function updateGlobalSyncButton() {
-    const btn = $("#btn_apply_tab_all");
-    if (!btn.length) return;
-
-    const title = (tabsUI[currentTab] || {}).title;
-    const alreadyGlobal = TABS_ALREADY_GLOBAL.includes(title);
-    const syncable = Boolean(TAB_SYNC_KEYS[title]);
-    const on = meguminIsTabSynced(title);
-
-    if (alreadyGlobal || !syncable) {
-        btn.html(`<i class="fa-solid fa-earth-americas"></i> Global`)
-            .attr("title", alreadyGlobal ? "This tab is stored globally already." : "This tab has nothing to sync.")
-            .css({ color: "var(--text-muted)", "border-color": "var(--border-color)", opacity: "0.55" });
-        return;
-    }
-
-    btn.html(`<i class="fa-solid fa-earth-americas"></i> Global: ${on ? "On" : "Off"}`)
-        .attr("title", on
-            ? `Every change on the ${title} tab is copied to all characters. Click to stop.`
-            : `Changes on the ${title} tab stay with this character. Click to make them global.`)
-        .css({
-            color: on ? "#10b981" : "var(--gold)",
-            "border-color": on ? "rgba(16,185,129,0.45)" : "rgba(245,158,11,0.3)",
-            opacity: "1"
-        });
-}
-
 // ────────────────────────────────────────────────────────────────────────────
 // Wiring.
 // ────────────────────────────────────────────────────────────────────────────
 
 // With no index: redraw whatever is on screen. With one (a number, or a tab id
-// like "notebook"): navigate to it.
+// like "memory"): navigate to it.
 registerRefreshHook(REFRESH.SWITCH_TAB, (index) => {
     const i = typeof index === "string" ? tabIndex(index) : index;
     switchTab(typeof i === "number" && i >= 0 ? i : currentTab);
 });
-registerRefreshHook(REFRESH.TAB_PROPAGATE, () => meguminPropagateTabIfSynced());

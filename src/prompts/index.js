@@ -4,7 +4,6 @@
 
 export { DEFAULT_PROMPTS, MEGUMIN_PROMPT_MODULES } from "./defaults.js";
 export {
-    meguminDiffPrompts,
     meguminFillPrompts,
     meguminSparsifyProfilePrompts,
     meguminRehydrateProfilePrompts,
