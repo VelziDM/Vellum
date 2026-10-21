@@ -21,14 +21,17 @@ import { renderChomusuke } from "./tabs/chomusuke.js";
 // nothing to do. Find a tab by `id` (tabIndex), never by title or position:
 // titles are what the user reads and positions move when the dock is reordered.
 export const tabsUI = [
-    { id: "preset", title: "Preset & Thinking", sub: "Choose the preset, how it thinks, and the story's standing rules.", icon: "fa-server", render: renderCoreAndCot },
-    { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
-    { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
+    { id: "preset", title: "Preset & Thinking", sub: "Choose the preset and how it thinks before it writes.", icon: "fa-server", render: renderCoreAndCot },
+    { id: "chomusuke", group: "archive", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
+    { id: "memory", group: "archive", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
     { id: "settings", bottom: true, title: "Settings", sub: "Extension preferences and about info.", icon: "fa-gear", render: renderGlobalSettings }
 ];
 
+// One group, at the bottom: the features that are not part of the daily loop
+// yet. They are being rewritten, so they live behind a fold instead of taking
+// a place next to the preset.
 export const DOCK_GROUPS = [
-    { id: "tools", title: "More Tools", icon: "fa-toolbox" }
+    { id: "archive", title: "Archive", icon: "fa-box-archive" }
 ];
 
 export function tabIndex(id) {
