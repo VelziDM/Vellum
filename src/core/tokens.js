@@ -30,9 +30,10 @@ export function updateLiveTokenCount() {
         "[[img1]]", "[[img2]]",
         "[[storyplan]]", "[[storytracker]]", "[[storytracker2]]",
         "[[banlist]]",
-        // The blocks the state store asks the model for are not testimonial
+        // The blocks the envelope asked the model for are not testimonial
         // text the reader authors — they are extraction asks, counted nowhere
-        // else either ([[npc_dossier]] family above).
+        // else either ([[npc_dossier]] family above). The block system is gone;
+        // these keep old presets' tags out of the live count.
         "[[blocks]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]", "[[notebook]]"
     ];
 

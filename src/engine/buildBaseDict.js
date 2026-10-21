@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 // Assembling the placeholder dictionary the preset is filled from.
 //
-// The top of the graph: it reads from every feature — the notebook, story
+// The top of the graph: it reads from every feature — story
 // config, memory — and nothing reads from it except the injector and the
 // token counter. That is why it moved last rather than first: extracting it
 // early would have made it import from index.js instead of from the features.
@@ -10,17 +10,14 @@
 import { getContext, extension_settings, substituteParams } from "../st.js";
 import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
-import { isV7Engine, isV8Engine, isModernEngine, engineUsesRenderLimits, isCoWriterEngine, engineKeepsNotebook } from "../core/engines.js";
+import { isV7Engine, isV8Engine, isModernEngine, engineUsesRenderLimits, isCoWriterEngine } from "../core/engines.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { hardcodedLogic } from "../../data/database.js";
 import { applyEnhancedDialogue } from "../../data/modes/v10.js";
-import { buildBlocksEnvelope } from "../features/blocks/registry.js";
 import { buildConfigBlock } from "../features/storyconfig/config.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
 import { meguminOverridableSlots, meguminSlotIsLive, meguminModuleTrigger } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
-import { notebookPromptBlock, notebookCurrentPhase } from "../state/index.js";
-import { NOTEBOOK_CRAFT } from "../prompts/notebook.js";
 
 export function buildBaseDict(isTokenCount = false) {
     const dict = {};
@@ -308,14 +305,8 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[prefill]]"] = dict["[[prefill]]"].replace(/\n<think>[\s\S]*/, "\n<think>\n<think>");
     }
 
-    let notebookPhaseNow = "off";
-    try {
-        notebookPhaseNow = notebookCurrentPhase();
-    } catch (e) { /* no chat */ }
-    dict["[[notebook]]"] = notebookPhaseNow === "off" || engineKeepsNotebook(activeEngine) ? "" : NOTEBOOK_CRAFT;
-
     // Resolve early-evaluated tokens inside all other strings to prevent them from being missed and then cleaned up
-    const earlyTokens = ["[[notebook]]", "[[count]]", "[[DNRATIO]]", "[[img2]]", "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"];
+    const earlyTokens = ["[[count]]", "[[DNRATIO]]", "[[img2]]", "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"];
     earlyTokens.forEach(et => {
         if (dict[et] !== undefined) {
             const val = dict[et];
@@ -326,26 +317,6 @@ export function buildBaseDict(isTokenCount = false) {
             });
         }
     });
-
-    // --- CURRENT WORLD STATE (continuity notes) ---
-    // Injected into [[infoblockcurrent]] above <Blocks> so the model reads the
-    // notebook's truths instead of its own old blocks in the chat.
-    // [[infoblockcorrent]] is an old misspelling some presets still carry.
-    let currentInfo = "";
-    try {
-        const nb = notebookPromptBlock();
-        if (nb) currentInfo = [
-            "<Current_Info>",
-            "<!-- Where the story stands right now, before your reply: how the characters feel and what they know, per your Author's Notebook. Keep your reply consistent with it and carry these values forward. Never copy this section into your reply. -->",
-            "",
-            nb,
-            "</Current_Info>"
-        ].join("\n");
-    } catch (e) {
-        console.warn("[Megumin Suite] Current Info: could not read the notebook.", e);
-    }
-    dict["[[infoblockcurrent]]"] = currentInfo;
-    dict["[[infoblockcorrent]]"] = currentInfo;
 
     // --- 5. MEMORY CORE INJECTION ---
     // Initialize them as empty strings by default so the tags cleanly vanish if there are no memories
@@ -405,11 +376,6 @@ export function buildBaseDict(isTokenCount = false) {
         }
     }
 
-    // --- MASTER BLOCK ENVELOPE ---
-    // The notebook's ask when it is on. Whether it reaches the model is decided
-    // later, by whether the preset has a [[blocks]] anchor in it.
-    //
-    dict["[[blocks]]"] = buildBlocksEnvelope();
 
     return dict;
 }

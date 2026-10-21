@@ -134,7 +134,7 @@ export async function applyConnectionProfileById(profileId, timeoutMs = 10000) {
  * 
  * Guarantees primary connection profile restoration on completion or error.
  * 
- * @param {"memory"|"banList"|"styleGen"|"notebook"|"test"} featureKey
+ * @param {"memory"|"banList"|"styleGen"|"test"} featureKey
  * @param {() => Promise<any>} task
  * @param {{ force?: boolean, jobs?: string[] }} [options]  jobs: what a failure
  *        message names (a combined call covers several); default [featureKey].

@@ -5,8 +5,7 @@
 // Profiles), so the story model never pauses or reloads presets.
 //
 // One page (plan 015): the on switch and the worker connection, then the jobs
-// grouped by what they cost: "After every reply" (a call on every reply, with
-// Combine calls and a live cost line) and "When the job runs" (occasional).
+// ("When the job runs": occasional).
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { localProfile } from "../../core/state.js";
@@ -17,7 +16,6 @@ import {
     runWithChomusuke,
 } from "../../engine/tasks.js";
 import { generateQuietPrompt } from "../../st.js";
-import { notebookEnabled } from "../../state/index.js";
 import { card, esc } from "../controls.js";
 import { CHOMUSUKE_SETUP_STEPS, CHOMUSUKE_SETUP_NOTE } from "../modelGuide.js";
 
@@ -25,13 +23,6 @@ import { CHOMUSUKE_SETUP_STEPS, CHOMUSUKE_SETUP_NOTE } from "../modelGuide.js";
 let advancedOpen = false;
 // null = not touched yet: open while there's no profile to pick.
 let setupOpen = null;
-
-// After every reply: each is a call on every reply while on (off by default).
-const PER_REPLY = [
-    { key: "notebook", title: "The Notebook", icon: "fa-book", color: "#8b5cf6", defaultOff: true,
-      desc: "Notes the clues each reply showed, who found out a hidden truth, and what came out. The story model only writes new truths.",
-      note: "I recommend keeping this one for the story model to handle." }
-];
 
 // When the job runs: occasional, only when that job fires.
 const OCCASIONAL = [
@@ -59,7 +50,6 @@ const routeOn = (cfg, feat) => feat.defaultOff ? cfg.features[feat.key] === true
 function featureOff(key) {
     const p = localProfile;
     switch (key) {
-        case "notebook": return notebookEnabled() ? null : { text: "The Notebook is off", tab: "notebook" };
         case "memory": return p.memoryCore && p.memoryCore.enabled ? null : { text: "Memory is off", tab: "memory" };
         default: return null;
     }
@@ -70,10 +60,6 @@ function offChip(key) {
     return off ? `<button type="button" class="chx-off" data-tab="${off.tab}" title="Open that tab">${esc(off.text)} <i class="fa-solid fa-arrow-right"></i></button>` : "";
 }
 
-/** How many Chomusuke calls a reply can cost right now. */
-function callsPerReply(cfg) {
-    return cfg.features.notebook === true && notebookEnabled() ? 1 : 0;
-}
 
 export function renderChomusuke(c) {
     c.empty();
@@ -149,29 +135,6 @@ export function renderChomusuke(c) {
     });
     conn.append($howFold).append($how);
     c.append(conn);
-
-    // ── After every reply ──
-    const n = callsPerReply(cfg);
-    const cost = !running ? "Chomusuke is off, so none of these cost a Chomusuke call."
-        : n === 0 ? "No job runs after every reply right now."
-        : n === 1 ? "Each reply costs <b>1</b> Chomusuke call."
-        : `Each reply costs up to <b>${n}</b> Chomusuke calls.`;
-
-    const every = card("After every reply", "Each job here is one Chomusuke call on every reply while it is on.");
-    every.append(`<div class="chx-cost"><i class="fa-solid fa-receipt"></i> <span>${cost}</span></div>`);
-    PER_REPLY.forEach(feat => {
-        const on = routeOn(cfg, feat);
-        const $row = routeRow(feat, on, offChip(feat.key));
-        $row.on("click", e => {
-            if ($(e.target).closest(".chx-off").length) return;
-            cfg.features[feat.key] = !on;
-            saveProfileToMemory();
-            // The cost line depends on these: redraw.
-            redraw();
-        });
-        every.append($row);
-    });
-    c.append(every);
 
     // ── When the job runs ──
     const occ = card("When the job runs", "Only when that job fires: a scan, a summary, a new direction.");

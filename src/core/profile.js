@@ -146,11 +146,10 @@ export function initProfile() {
             }
         },
         // The state lives in the chat file (chat_metadata.megumin_state), never here.
+        // The notebook's study is nothing now.
         // Plan 008 keeps working: the story model reads Current Info, not its own
         // old blocks in the chat history.
         hideBlocksFromAI: true,
-        // The Author's Notebook. An engine with `notebook: true` turns it on anyway.
-        notebook: { enabled: false }
     };
 
 
@@ -296,6 +295,11 @@ export function initProfile() {
     delete localProfile.blockStack;
     delete localProfile.statBlocks;
     delete localProfile.npcBank;
+    // The notebook state store lived in chat_metadata.megumin_state; nothing
+    // writes or reads it any more, so it is dropped from the settings keys.
+    // The chat-metadata copy is left alone: old chats keep loading, the entries
+    // are inert.
+    if (localProfile.state) delete localProfile.state;
 
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each

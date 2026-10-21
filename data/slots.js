@@ -142,12 +142,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
     // ── Filled live by a feature. Nothing to edit ────────────────────────────
     { key: null, trigger: "[[config]]", label: "Story Config", scope: "auto", group: "live", where: "Preset & Thinking",
       hint: "The <config> block built from your Story Config choices." },
-    { key: null, trigger: "[[infoblockcurrent]]", label: "Current Info", scope: "auto", group: "live", where: "Notebook",
-      hint: "The notebook's truths on file, injected so the model reads them instead of its own old blocks." },
-    { key: null, trigger: "[[notebook]]", label: "Author's Notebook", scope: "auto", group: "live", where: "Notebook",
-      hint: "How to keep the notebook's hidden truths. Empty while the notebook is off or paused." },
-    { key: null, trigger: "[[blocks]]", label: "Output Blocks", scope: "auto", group: "live", where: "NPC Bank",
-      hint: "The <Blocks> envelope: the NPC Bank's slot lines, and the notebook's ask when it is on." },
     { key: null, trigger: "[[long-Memory]]", label: "Long-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Archived summaries pulled from the vault for this turn." },
     { key: null, trigger: "[[Short-memory]]", label: "Short-term Memory", scope: "auto", group: "live", where: "Memory",
@@ -184,8 +178,10 @@ export function meguminAllSlotTriggers() {
     ["[[death]]", "[[combat]]", "[[html]]", "[[dice]]", "[[Direct]]", "[[DN]]", "[[COLOR]]",
         "[[onomato]]", "[[Language]]", "[[pronouns]]", "[[npc_events]]", "[[MVU]]",
         // The blocks system is gone (its slot lines above); old presets still
-        // carrying these tags would leak them otherwise.
+        // carrying these tags would leak them otherwise. [[infoblockcorrent]]
+        // is an old misspelling of [[infoblockcurrent]] some presets carry.
         "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]",
+        "[[blocks]]", "[[notebook]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]",
         // The NPC Bank is gone too (its slot lines above were its only writers).
         "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]"]
         .forEach(t => out.add(t));

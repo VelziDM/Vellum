@@ -54,20 +54,12 @@ import {
     _saveProfileDebouncedInner,
     pruneFutureData,
 } from "./src/core/profile.js";
-import { notebookReadForReply } from "./src/features/notebook/worker.js";
 import {
     memProcessPendingChunks,
     isMessageArchived,
     updateMemoryVisuals,
 } from "./src/features/memory/index.js";
 import { memUpdateSemanticQueryDebounced, memEnsureSemanticQueryFresh } from "./src/features/memory/vectordb.js";
-import {
-    stateOnMessageReceived, stateOnSwiped, stateOnSwipeDeleted, stateOnEdited, stateOnDeleted, stateOnChatLoaded,
-    setWorldStateChangedHook, NOT_A_REPLY as BLOCKS_NOT_A_REPLY,
-} from "./src/state/index.js";
-import {
-    meguminDecorateMessageBody, meguminRefreshBlocksInChat, meguminScheduleBlocksRefresh,
-} from "./src/features/blocks/chat.js";
 import { buildBaseDict } from "./src/engine/buildBaseDict.js";
 import { handlePromptInjection } from "./src/engine/injection.js";
 import { suiteEnabled, setSuiteEnabled, syncPowerUI } from "./src/core/power.js";
@@ -376,12 +368,8 @@ jQuery(async () => {
             // Prune future data and roll back ledger on message deletion
             eventSource.on(event_types.MESSAGE_DELETED, () => {
                 pruneFutureData();
-                if (stateOnDeleted()) meguminScheduleBlocksRefresh();
             });
             // Handle swipe rewind & sync
-            // Background reads (notebook) land in the store; redraw the cards
-            // when one starts ("Reading…") and when it lands.
-            setWorldStateChangedHook(() => { meguminScheduleBlocksRefresh(); });
             // Send guard: SillyTavern waits for this handler before it talks to
             // the API, so a reply sent while Chomusuke has the worker profile
             // switched in (switching in or back, when Send is still live) waits
@@ -399,49 +387,11 @@ jQuery(async () => {
                 ]);
                 if (gaveUp) console.warn("[Megumin-Suite] Send guard: Chomusuke still busy after 30s; sending anyway.");
             });
-            eventSource.on(event_types.MESSAGE_SWIPED, (mesId) => {
-                if (stateOnSwiped(mesId)) meguminScheduleBlocksRefresh();
-            });
-            eventSource.on(event_types.MESSAGE_SWIPE_DELETED, (data) => {
-                if (stateOnSwipeDeleted(data)) meguminScheduleBlocksRefresh();
-            });
-            eventSource.on(event_types.MESSAGE_EDITED, (mesId) => {
-                if (stateOnEdited(mesId)) meguminScheduleBlocksRefresh();
-            });
-            // State store: stamp, square with deletions made meanwhile once the
-            // chat has loaded. Same deferral as initProfile, and dropped if the
-            // user has already moved on to another chat.
-            eventSource.on(event_types.CHAT_CHANGED, () => {
-                const chatAtEvent = getContext().chatId;
-                setTimeout(() => {
-                    if (getContext().chatId !== chatAtEvent) return;
-                    if (stateOnChatLoaded()) meguminScheduleBlocksRefresh();
-                }, 250);
-            });
             // REPLY ARRIVAL (reads, memory)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {
                 updateMemoryVisuals();
                 // Master switch off: nothing below runs (no reads, memory).
                 if (!suiteEnabled()) return;
-
-                // --- NOTEBOOK STATE STORE ---
-                // The store turns chat events into per-message records. Cards
-                // redraw when one lands.
-                try {
-                    if (stateOnMessageReceived(receivedId, receivedType)) meguminScheduleBlocksRefresh();
-                } catch (e) {
-                    console.error("[Megumin-Suite] State store update failed", e);
-                }
-
-                // --- NOTEBOOK BY CHOMUSUKE ---
-                // Clues, who learned what, what came out. Does nothing unless the
-                // Notebook route is on and the notebook has live truths.
-                if (!BLOCKS_NOT_A_REPLY.has(receivedType)) {
-                    const chatNow = getContext().chat || [];
-                    const nbIndex = typeof receivedId === "number" ? receivedId : chatNow.length - 1;
-                    notebookReadForReply(nbIndex, { force: receivedType === "continue" })
-                        .catch(e => console.error("[Megumin-Suite] Notebook read failed", e));
-                }
 
                 // AUTO-TRIGGER MEMORY CORE
                 const mem = localProfile?.memoryCore;
@@ -512,14 +462,6 @@ jQuery(async () => {
         [
             event_types.CHARACTER_MESSAGE_RENDERED,
             event_types.MESSAGE_SWIPED,
-            event_types.MESSAGE_UPDATED,
-            event_types.MESSAGE_EDITED,
-            event_types.MORE_MESSAGES_LOADED,
-            event_types.CHAT_CHANGED,
-            event_types.GENERATION_ENDED
-        ].forEach(evt => {
-            if (evt) eventSource.on(evt, () => meguminScheduleBlocksRefresh(120));
-        });
 
         // ── FLUSH PENDING SAVES ON TAB HIDE / PAGE CLOSE ──
         // visibilitychange fires reliably on tab switch AND on close (before pagehide).

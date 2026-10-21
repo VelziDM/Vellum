@@ -20,9 +20,7 @@ import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
 import { memEnsureSemanticQueryFresh } from "../features/memory/vectordb.js";
 import { escapeRegex } from "../utils/regex.js";
 import { buildBaseDict } from "./buildBaseDict.js";
-import { hideBlocksInMessages } from "./hideBlocks.js";
 import { addThinkingNudge } from "./thinkingNudge.js";
-import { meguminAllBlockTags } from "../features/blocks/registry.js";
 import { meguminAllSlotTriggers } from "../../data/slots.js";
 import { suiteEnabled } from "../core/power.js";
 import { backgroundJobNow, reviewBackgroundPrompt } from "./bgPrompts.js";
@@ -170,12 +168,16 @@ async function buildPromptInjection(data, type) {
     ["[[infoblock]]", "[[infoblock2]]", "[[npc_inner_chatter]]", "[[npc_inner_chatter2]]",
         "[[storytracker]]", "[[storytracker2]]", "[[npc_dossier2]]"].forEach(t => { dict[t] = ""; });
 
-    // Hide blocks from the AI (plan 008): the model reads the kept values once,
-    // in <Current_Info>, instead of every old block in the chat history. Done
-    // before the placeholders are filled, so the [[blocks]] template the preset
-    // carries is never touched — only the replies already in the chat.
+    // Hide blocks from the AI (plan 8): the blocks system is gone. Old replies in
+    // the chat still carry the envelope and its children; strip them so the model
+    // never reads its own old cards. Done before the placeholders are filled, so
+    // the [[blocks]] template the preset carries is never touched — only the
+    // replies already in the chat.
     if (localProfile.hideBlocksFromAI !== false) {
-        const hidden = hideBlocksInMessages(messages, meguminAllBlockTags());
+        const tags = ["Blocks", "Dice", "World_State", "World_Update", "CYOA", "NPC_Inner_Chatter",
+            "Bonds", "Character_Sheet", "Story_Tracker", "New_NPC", "NPC_Update",
+            "Notebook", "Notebook_Update"];
+        const hidden = hideBlocksInMessages(messages, tags);
         if (hidden) console.debug(`[${extensionName}] Hid the blocks in ${hidden} earlier repl${hidden === 1 ? "y" : "ies"} from the model.`);
     }
 

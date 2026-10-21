@@ -25,7 +25,6 @@ export const TAB_SYNC_KEYS = {
     "Preset & Thinking": ["mode", "model", "cotEnabled", "thinkEffort", "customThinkEffort", "thinkingV2", "storyConfig", "enhancedDialogue"],
     "Persona": ["personality", "toggles"],
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
-    "The Notebook": ["notebook"],
     "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
     "Memory": ["memoryCore"],
     "Chomusuke": ["chomusuke"]

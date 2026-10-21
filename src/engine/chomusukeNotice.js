@@ -13,15 +13,15 @@
 // the parts of a combined call).
 
 export const CHOMUSUKE_JOB_NAMES = {
-    notebook: "The Notebook",
     memory: "the memory summary",
     banList: "Banned Phrases",
     styleGen: "the writing style",
     test: "the test"
 };
 
-// Jobs whose result has a card with a Read again button.
-const HAS_READ_AGAIN = new Set(["notebook"]);
+// Jobs whose result has a card with a Read again button. The notebook's had
+// one; it died with the notebook.
+const HAS_READ_AGAIN = new Set();
 
 const nameOf = job => CHOMUSUKE_JOB_NAMES[job] || job;
 

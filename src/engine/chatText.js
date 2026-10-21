@@ -9,7 +9,6 @@
 
 import { getContext } from "../st.js";
 import { localProfile } from "../core/state.js";
-import { meguminAllBlockTags } from "../features/blocks/registry.js";
 
 // Re-exported so the existing chatText import sites keep working.
 export { escapeRegex } from "../utils/regex.js";
@@ -44,13 +43,15 @@ export function meguminCleanChatHistoryText(text) {
     // tracker leaks as badly as a whole one, so cut from it to the end of the text.
     cleaned = cleaned.replace(/<Story_Tracker[^>]*>[\s\S]*$/i, "");
 
-    // The <Blocks> envelope and its named children. Taking the envelope whole
-    // handles the ordinary reply in one pass; the children are then stripped
-    // individually because nothing guarantees they arrived inside it — a reply
-    // cut off before </Blocks> leaves them loose in the text, and a block that
-    // reaches the summariser teaches the model to write more of them.
+    // The <Blocks> envelope and its named children (the block system is gone;
+    // old replies still carry the tags). Taking the envelope whole handles the
+    // ordinary reply in one pass; the children are then stripped individually
+    // because nothing guarantees they arrived inside it — a reply cut off
+    // before </Blocks> leaves them loose in the text.
+    const blockTags = ["Dice", "World_State", "World_Update", "CYOA", "NPC_Inner_Chatter",
+        "Bonds", "Character_Sheet", "Story_Tracker", "New_NPC", "NPC_Update",
+        "Notebook", "Notebook_Update"];
     cleaned = cleaned.replace(/<Blocks\b[^>]*>[\s\S]*?<\/Blocks\s*>/gi, "");
-    const blockTags = meguminAllBlockTags();
     blockTags.forEach(tag => {
         cleaned = cleaned.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}\\s*>`, "gi"), "");
     });
