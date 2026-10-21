@@ -327,6 +327,8 @@ export function initProfile() {
     delete localProfile.banListBackend;
     delete localProfile.banListCustomPrompts;
     delete localProfile.banListCustomPromptsEnabled;
+    // The dialogue/narration ratio is gone with its slot.
+    delete localProfile.dnRatio;
 
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each

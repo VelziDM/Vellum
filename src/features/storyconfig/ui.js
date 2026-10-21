@@ -317,56 +317,9 @@ export function renderStoryConfig(c) {
     const mainArea = $(`<div class="ws-main"></div>`);
 
     // --- BUILD SIDEBAR ---
-    // ── DN RATIO ──
-    // Its own option at the top of the sidebar rather than an afterthought under
-    // the style list: it applies to every style, so it does not belong inside the
-    // list of styles you pick between. The two ends are labelled because a bare
-    // pair of percentages does not say which half of the writing each one governs.
-    if (!localProfile.dnRatio) localProfile.dnRatio = { enabled: false, dialogue: 50 };
-    const isDNR = localProfile.dnRatio.enabled;
-    const dVal = localProfile.dnRatio.dialogue;
-
-    const dnPanel = $(`
-        <div style="margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-scale-balanced" style="color: #3b82f6; margin-right: 5px;"></i> DN Ratio</span>
-                <div class="ps-toggle-card ${isDNR ? 'active' : ''}" id="dnr_toggle_sb" style="padding: 2px; min-width: 36px; background: transparent; border-color: ${isDNR ? '#10b981' : 'var(--border-color)'}; cursor: pointer; border-radius: 8px;">
-                    <div class="ps-switch" style="transform: scale(0.65); ${isDNR ? 'background: #10b981;' : ''}"></div>
-                </div>
-            </div>
-            <div id="dnr_body_sb" style="display: ${isDNR ? 'block' : 'none'};">
-                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; margin-bottom: 6px;">
-                        <div style="text-align: left; min-width: 0;">
-                            <div style="font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted);">Narration</div>
-                            <div style="font-size: 0.9rem; font-weight: 800; color: #a855f7; line-height: 1.1;"><span id="lbl_narr">${100 - dVal}</span>%</div>
-                        </div>
-                        <div style="text-align: right; min-width: 0;">
-                            <div style="font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted);">Dialogue</div>
-                            <div style="font-size: 0.9rem; font-weight: 800; color: #10b981; line-height: 1.1;"><span id="lbl_dial">${dVal}</span>%</div>
-                        </div>
-                    </div>
-                    <input type="range" id="dnr_slider" min="0" max="100" step="10" value="${dVal}" style="width: 100%; accent-color: var(--gold); height: 4px; display: block;">
-                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.5rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-                        <span>&#9664; more narration</span>
-                        <span>more dialogue &#9654;</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-
-    dnPanel.find("#dnr_toggle_sb").on("click", function (e) {
-        e.stopPropagation(); localProfile.dnRatio.enabled = !localProfile.dnRatio.enabled; saveProfileToMemory(); renderStyleLibrary(c);
-    });
-    dnPanel.find("#dnr_slider").on("input", function () {
-        let d = parseInt($(this).val()); let n = 100 - d;
-        $("#lbl_dial").text(d); $("#lbl_narr").text(n);
-    });
-    dnPanel.find("#dnr_slider").on("change", function () {
-        localProfile.dnRatio.dialogue = parseInt($(this).val()); saveProfileToMemory();
-    });
-    sidebar.append(dnPanel);
+    // The dialogue/narration ratio is gone: the document now marks speech and
+    // description with <dialogue> and <narration> tags, and a percentage on top
+    // of that only contradicts the tags.
     sidebar.append(`<div style="height: 1px; background: var(--border-color); margin: 0 0 8px 0;"></div>`);
 
     sidebar.append(`<div class="ws-sidebar-title">Writing Style</div>`);
