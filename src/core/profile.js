@@ -20,8 +20,6 @@ import { fireRefreshHook, REFRESH } from "./refreshHooks.js";
 import { meguminSparsifyProfilePrompts, meguminRehydrateProfilePrompts } from "../prompts/storage.js";
 import { DEFAULT_PROMPTS } from "../prompts/defaults.js";
 import { hardcodedLogic } from "../../data/database.js";
-import { NPC_DEFAULT_FIELDS, NPC_SYSTEM_ROLES } from "../features/npc/fields.js";
-import { npcRollbackHistoryFrom } from "../features/npc/updates.js";
 import { normalizeStoryConfig, applyStoryConfigDefaults } from "../features/storyconfig/config.js";
 import { escapeRegex } from "../utils/regex.js";
 
@@ -97,13 +95,11 @@ export function initProfile() {
             length: "",
             difficulty: "",
             friction: "",
-            npcDisposition: "",
             explicitness: "",
             narratorPresence: "",
             focus: "",
             culture: "",
             era: "",
-            npcSpeechStyle: "",
             notes: ""
         },
         dnRatio: {
@@ -139,28 +135,12 @@ export function initProfile() {
             customPrompts: null,
             customPromptsEnabled: false
         },
-        npcBank: {
-            enabled: false,
-            oocTrigger: false,
-            sendPortraitsToAi: false,
-            npcs: [],
-            // The dossier's shape. The prompt template, the parser, the card and
-            // the injected text are all generated from this, so adding a field
-            // is a setting the reader changes rather than a code change.
-            fields: JSON.parse(JSON.stringify(NPC_DEFAULT_FIELDS)),
-            customPrompts: null,
-            customPromptsEnabled: false,
-            scanDepth: 60,
-            ignoredNames: "",
-            injectionLimit: 3
-        },
         chomusuke: {
             enabled: false,
             profileId: "",
             primaryProfileId: "",
             features: {
                 memory: true,
-                npc: true,
                 banList: true,
                 styleGen: true
             }
@@ -254,7 +234,6 @@ export function initProfile() {
         if (localProfile[k] === undefined) localProfile[k] = defaults[k];
     });
     if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
-    if (localProfile.npcBank && localProfile.npcBank.scanDepth === undefined) localProfile.npcBank.scanDepth = 60;
     if (localProfile.banListCustomPromptsEnabled === undefined) localProfile.banListCustomPromptsEnabled = false;
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
     if (!localProfile.storyConfig) localProfile.storyConfig = JSON.parse(JSON.stringify(defaults.storyConfig));
@@ -281,61 +260,12 @@ export function initProfile() {
     // than blank. Only fills what is empty, so a reader who picked something keeps it.
     applyStoryConfigDefaults(localProfile.storyConfig);
     if (localProfile.memoryCore && localProfile.memoryCore.customPromptsEnabled === undefined) localProfile.memoryCore.customPromptsEnabled = false;
-    if (localProfile.npcBank && localProfile.npcBank.customPromptsEnabled === undefined) localProfile.npcBank.customPromptsEnabled = false;
-    if (localProfile.npcBank && localProfile.npcBank.oocTrigger === undefined) localProfile.npcBank.oocTrigger = false;
-    if (localProfile.npcBank && localProfile.npcBank.ignoredNames === undefined) localProfile.npcBank.ignoredNames = "";
-    if (localProfile.npcBank && localProfile.npcBank.injectionLimit === undefined) localProfile.npcBank.injectionLimit = 3;
-    // NPC field list. Seeded from the defaults, whose ids are the exact keys every
-    // already-saved NPC carries — so an upgrading profile keeps rendering every
-    // dossier it has without a data migration.
-    if (localProfile.npcBank) {
-        if (!Array.isArray(localProfile.npcBank.fields) || localProfile.npcBank.fields.length === 0) {
-            localProfile.npcBank.fields = JSON.parse(JSON.stringify(NPC_DEFAULT_FIELDS));
-        } else {
-            // A structural field is code the reader can rename, not code they can
-            // delete: without a name field there is nothing to key an NPC on, and
-            // without the vitals the header line has nothing to draw. Put back any
-            // that a hand-edited or partially-written profile is missing.
-            NPC_SYSTEM_ROLES.forEach(role => {
-                const present = localProfile.npcBank.fields.some(f => f && f.system === role);
-                if (present) return;
-                const restored = NPC_DEFAULT_FIELDS.filter(f => f.system === role);
-                // Restored at the front so name and vitals stay ahead of the body
-                // rows, which is the order the template's header line needs.
-                localProfile.npcBank.fields.unshift(...JSON.parse(JSON.stringify(restored)));
-                console.debug(`[Megumin-Suite] NPC field list was missing its "${role}" field; the default was restored.`);
-            });
-        }
-
-        // Structural metadata is code's, not the reader's, so it is re-read from
-        // the defaults on every load rather than trusted from storage.
-        //
-        // Without this, a profile saved before a flag existed keeps the old
-        // behaviour for good: `fixed` shipped after the field list did, so every
-        // profile written in between has a fields array with no `fixed` on it,
-        // and the editor would go on listing Name and Age forever.
-        //
-        // What the reader owns — label, placeholder, order, persistent,
-        // updatable — is never touched here.
-        const npcDefaultById = new Map(NPC_DEFAULT_FIELDS.map(f => [f.id, f]));
-        localProfile.npcBank.fields.forEach(f => {
-            const def = npcDefaultById.get(f && f.id);
-            if (!def) return;   // a field the reader added; nothing to sync
-            f.fixed = def.fixed === true;
-            if (def.system) f.system = def.system; else delete f.system;
-            if (def.ownLine) f.ownLine = true;
-            if (def.itemFormat && !f.itemFormat) f.itemFormat = def.itemFormat;
-            if (!f.icon) f.icon = def.icon;
-            if (!f.color) f.color = def.color;
-        });
-    }
     if (!localProfile.memoryCore) {
         localProfile.memoryCore = defaults.memoryCore;
     } else {
         if (localProfile.memoryCore.chunkSize === undefined) localProfile.memoryCore.chunkSize = 10;
     }
-    if (!localProfile.dnRatio) localProfile.dnRatio = defaults.dnRatio;
-    if (!localProfile.chomusuke) {
+    if (!localProfile.dnRatio) localProfile.dnRatio = defaults.dnRatio;    if (!localProfile.chomusuke) {
         localProfile.chomusuke = JSON.parse(JSON.stringify(defaults.chomusuke));
     } else {
         if (localProfile.chomusuke.enabled === undefined) localProfile.chomusuke.enabled = false;
@@ -344,7 +274,6 @@ export function initProfile() {
         if (!localProfile.chomusuke.features) {
             localProfile.chomusuke.features = {
                 memory: true,
-                npc: true,
                 banList: true,
                 styleGen: true
             };
@@ -366,31 +295,12 @@ export function initProfile() {
     delete localProfile.blocks;
     delete localProfile.blockStack;
     delete localProfile.statBlocks;
+    delete localProfile.npcBank;
 
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each
     // module container exists, so a profile saved before a module shipped is covered too.
     meguminRehydrateProfilePrompts(localProfile);
-
-    // The dossier template is generated from the field list now, so a stored
-    // hand-edit of it is no longer read. Nothing is deleted and nothing breaks —
-    // it simply stops applying, which is exactly the kind of silent change worth
-    // saying out loud. Once per install, not once per chat.
-    if (localProfile.npcBank && localProfile.npcBank.customPrompts
-        && typeof localProfile.npcBank.customPrompts.dossierTemplate === "string"
-        && localProfile.npcBank.customPrompts.dossierTemplate.trim() !== ""
-        && !extension_settings[extensionName].globalSettings.npcTemplateNoticeShown) {
-        extension_settings[extensionName].globalSettings.npcTemplateNoticeShown = true;
-        saveSettingsDebounced();
-        console.log("[Megumin Suite] A hand-edited NPC dossier template was found. The template is generated from the NPC Bank's field list now, so that edit is no longer applied — rebuild it as fields in the NPCs Bank tab.");
-        if (typeof toastr !== "undefined") {
-            toastr.info(
-                "Your edited NPC dossier template is no longer used — the dossier is built from the field list in the NPC Bank tab now. Your old text is still stored, nothing was deleted.",
-                "Megumin Suite — NPC template moved",
-                { timeOut: 12000 }
-            );
-        }
-    }
 
     // A profile written before Enhanced Dialogue existed has no map at all.
     if (!localProfile.enhancedDialogue || typeof localProfile.enhancedDialogue !== "object") {
@@ -408,8 +318,7 @@ export function initProfile() {
     // written is NOT counted: saveMetadata() could still fail, and the settings copy is
     // the sole remaining original until it lands. Those clean up on the next open.
     const metaHadOnEntry = {
-        memory: !!(chat_metadata && chat_metadata["megumin_memory_core"]),
-        npcs: !!(chat_metadata && chat_metadata["megumin_npc_bank"])
+        memory: !!(chat_metadata && chat_metadata["megumin_memory_core"])
     };
 
     if (chat_metadata && chat_metadata["megumin_memory_core"]) {
@@ -421,19 +330,6 @@ export function initProfile() {
         chat_metadata["megumin_memory_core"] = {
             shortTermChunks: localProfile.memoryCore.shortTermChunks || [],
             longTermVault: localProfile.memoryCore.longTermVault || []
-        };
-        saveMetadata();
-    }
-
-    // --- LOAD NPCs FROM CHAT METADATA ---
-    if (chat_metadata && chat_metadata["megumin_npc_bank"]) {
-        if (localProfile.npcBank) {
-            localProfile.npcBank.npcs = chat_metadata["megumin_npc_bank"].npcs || [];
-        }
-    } else if (chat_metadata && localProfile.npcBank && localProfile.npcBank.npcs?.length > 0) {
-        // Migration: If NPCs are stuck in settings.json, move them to the chat file!
-        chat_metadata["megumin_npc_bank"] = {
-            npcs: localProfile.npcBank.npcs || []
         };
         saveMetadata();
     }
@@ -455,10 +351,6 @@ export function initProfile() {
                 && (stored.memoryCore.shortTermChunks !== undefined || stored.memoryCore.longTermVault !== undefined)) {
                 delete stored.memoryCore.shortTermChunks;
                 delete stored.memoryCore.longTermVault;
-                freed = true;
-            }
-            if (metaHadOnEntry.npcs && stored.npcBank && stored.npcBank.npcs !== undefined) {
-                delete stored.npcBank.npcs;
                 freed = true;
             }
             // The removed Story Director and image gen. Old profiles carry orphaned
@@ -551,71 +443,6 @@ export function pruneFutureData() {
         }
     }
 
-    // 2. Prune NPC Bank (SMART SURVIVAL LOGIC)
-    const npcBank = localProfile?.npcBank;
-    if (npcBank && npcBank.npcs && npcBank.npcs.length > 0) {
-        const originalLength = npcBank.npcs.length;
-        
-        // Grab the last 20 messages to check for NPC survival if their index is out of bounds
-        const recentText = context.chat.slice(-20).map(m => m.mes).join(" ");
-
-        // Named NPCs the rewind culled, so the user can be told who vanished.
-        // Nameless entries are corrupted records rather than characters anyone
-        // recognises, so they are dropped silently and left out of the count.
-        const removedNpcNames = [];
-
-        npcBank.npcs = npcBank.npcs.filter(npc => {
-            if (npc.messageIndex !== undefined && npc.messageIndex !== null) {
-                if (npc.messageIndex >= chatLength) {
-                    const fullName = typeof npc.name === "string" ? npc.name.trim() : "";
-                    if (!fullName) return false; // Cull corrupted/nameless NPCs
-
-                    // Test the first token. The lookahead (?=\W|$) replaces the trailing \b, 
-                    // which prevents bugs with names ending in parentheses or quotes.
-                    const firstToken = fullName.split(/\s+/)[0];
-                    const nameRegex = new RegExp(`\\b${escapeRegex(firstToken)}(?=\\W|$)`, 'i');
-                    const dossierRegex = new RegExp(`New NPC:\\s*${escapeRegex(fullName)}`, 'i');
-
-                    const survived = nameRegex.test(recentText) || dossierRegex.test(recentText);
-
-                    if (survived) {
-                        // messageIndex left untouched so the original creation point survives
-                        changesMade = true; 
-                        return true;
-                    }
-                    removedNpcNames.push(fullName);
-                    return false; // Cull them (they are truly gone)
-                }
-            }
-            return true; // Keep established NPCs (index < chatLength)
-        });
-
-        if (npcBank.npcs.length !== originalLength) {
-            changesMade = true;
-        }
-
-        // An NPC disappearing from the bank is silent otherwise: the entry is
-        // simply gone the next time the tab is opened, with nothing saying why.
-        if (removedNpcNames.length > 0) {
-            toastr.info(
-                removedNpcNames.join(", "),
-                `Megumin Suite — ${removedNpcNames.length} NPC${removedNpcNames.length === 1 ? "" : "s"} removed by rewind`
-            );
-        }
-    }
-
-    // 2c. Roll back dossier updates that arrived in messages the rewind removed.
-    //
-    // Runs after the NPC cull above, so an NPC that vanished entirely takes its
-    // history with it and this only has to consider the ones still here. A field
-    // changed twice is restored to the value from before the EARLIER change —
-    // see npcRollbackHistoryFrom, where that ordering is the whole point.
-    if (npcRollbackHistoryFrom(chatLength)) {
-        changesMade = true;
-    }
-    // World State needs no rollback here: the state store squares itself with
-    // the chat on MESSAGE_DELETED (src/state/index.js).
-
     // 2b. Rebalance the working window.
     //
     // The prune above only drops chunks that point PAST the end of the chat.
@@ -636,7 +463,6 @@ export function pruneFutureData() {
         fireRefreshHook(REFRESH.MEMORY_VAULT, $("#mem_vault_search").val() || "");
         fireRefreshHook(REFRESH.MEMORY_DASHBOARD);
         fireRefreshHook(REFRESH.MEMORY_VISUALS);
-        fireRefreshHook(REFRESH.NPC_LIST);
     }
 }
 
@@ -678,7 +504,6 @@ export function saveProfileToMemory() {
 
     if (chat_metadata) {
         const mem = localProfile.memoryCore;
-        const bank = localProfile.npcBank;
 
         // Write a block if it has content now, or if the key already exists on the chat.
         // The second half is what keeps a deletion, and a bank left empty by the
@@ -688,11 +513,6 @@ export function saveProfileToMemory() {
             if (!chat_metadata["megumin_memory_core"]) chat_metadata["megumin_memory_core"] = {};
             chat_metadata["megumin_memory_core"].shortTermChunks = mem.shortTermChunks || [];
             chat_metadata["megumin_memory_core"].longTermVault = mem.longTermVault || [];
-        }
-
-        if (bank && ((bank.npcs?.length > 0) || chat_metadata["megumin_npc_bank"] !== undefined)) {
-            if (!chat_metadata["megumin_npc_bank"]) chat_metadata["megumin_npc_bank"] = {};
-            chat_metadata["megumin_npc_bank"].npcs = bank.npcs || [];
         }
 
         const hasAnyBlock = !!(chat_metadata["megumin_memory_core"]
@@ -719,8 +539,6 @@ export function saveProfileToMemory() {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
     }
-    if (profileToSave.npcBank) {
-        delete profileToSave.npcBank.npcs; // DO NOT save NPCs in settings.json!
     }
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!
@@ -781,8 +599,6 @@ export function flushProfileSettingsToLoadedKey() {
         delete profileToSave.memoryCore.shortTermChunks;
         delete profileToSave.memoryCore.longTermVault;
     }
-    if (profileToSave.npcBank) {
-        delete profileToSave.npcBank.npcs; // DO NOT save NPCs in settings.json!
     }
     if (profileToSave.imageGen) {
         delete profileToSave.imageGen.characterTags; // DO NOT save characterTags in settings.json!

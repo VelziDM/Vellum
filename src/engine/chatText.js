@@ -95,12 +95,4 @@ export function getCleanedChatHistory() {
     return cleanedMessages.join("\n\n");
 }
 
-export function getChatForNpcScan() {
-    const context = getContext();
-    if (!context.chat || context.chat.length === 0) return "";
-    const depth = localProfile?.npcBank?.scanDepth || 60;
-    // Grab the last 'depth' actual messages (both user and AI) to have complete context
-    const msgs = context.chat.filter(m => !m.is_system).slice(-depth);
-    return msgs.map(m => `${m.name}: ${meguminCleanChatHistoryText(m.mes)}`).join("\n\n");
-}
 

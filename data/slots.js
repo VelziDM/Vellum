@@ -152,10 +152,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "Archived summaries pulled from the vault for this turn." },
     { key: null, trigger: "[[Short-memory]]", label: "Short-term Memory", scope: "auto", group: "live", where: "Memory",
       hint: "Recent chat kept verbatim." },
-    { key: null, trigger: "[[npc list]]", label: "NPC List", scope: "auto", group: "live", where: "NPC Bank",
-      hint: "The NPCs judged relevant to the current scene." },
-    { key: null, trigger: "[[npc_dossier]]", label: "NPC Dossier Rules", scope: "auto", group: "live", where: "NPC Bank",
-      hint: "Instructions for keeping dossiers up to date. Not the dossiers themselves." },
     { key: null, trigger: "[[img1]]", label: "Image Rules", scope: "auto", group: "live", where: "Images",
       hint: "Instructions for emitting image prompts." },
     { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",
@@ -178,7 +174,7 @@ export function meguminAllSlotTriggers() {
     MEGUMIN_SLOT_REGISTRY.forEach(s => out.add(s.trigger));
     // Numbered twins: some presets emit a block a second time further down.
     ["[[infoblock2]]", "[[cyoa2]]", "[[storytracker2]]", "[[npc_inner_chatter2]]",
-        "[[npc_dossier2]]", "[[img2]]", "[[dice_rolls]]", "[[npc_updates]]", "[[order]]",
+        "[[img2]]", "[[dice_rolls]]", "[[order]]",
         "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"]
         .forEach(t => out.add(t));
     // Triggers of add-on slots that were removed with the Language & Add-ons
@@ -189,7 +185,9 @@ export function meguminAllSlotTriggers() {
         "[[onomato]]", "[[Language]]", "[[pronouns]]", "[[npc_events]]", "[[MVU]]",
         // The blocks system is gone (its slot lines above); old presets still
         // carrying these tags would leak them otherwise.
-        "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]"]
+        "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]",
+        // The NPC Bank is gone too (its slot lines above were its only writers).
+        "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]"]
         .forEach(t => out.add(t));
     // The bare-bracket spellings an older preset generation used.
     for (let i = 1; i <= 6; i++) out.add(`[prompt${i}]`);

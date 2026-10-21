@@ -1,30 +1,19 @@
 // ────────────────────────────────────────────────────────────────────────────
 // Drawing the <Blocks> card into chat messages.
 //
-// What is left to draw: the NPC Bank's New NPC / NPC Update panes, and — for a
-// reply Chomusuke read — the notebook card. The rest of the block system died
-// with the Blocks tab; the export names stay because index.js and the NPC
-// flows are wired to them.
+// What is left to draw: the notebook card, on a reply Chomusuke read. The rest
+// of the block system (the tab, the stack, the NPC panes) died; the export
+// names stay because index.js is wired to them.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { getContext } from "../../st.js";
 import { extensionName } from "../../core/constants.js";
 import { applyBlocksToMessage, clearBlocksFromMessage } from "../../blocks/render.js";
-import { meguminRenderRegistry } from "./registry.js";
-// One directed edge from the blocks feature to the NPC feature. No cycle:
-// nothing under features/npc/ imports the block card.
-import { npcDecorateUpdatePane } from "../npc/updateCard.js";
-import { npcDecorateNewPane } from "../npc/newCard.js";
 import { notebookCardTextAt } from "../../state/index.js";
 import { NOTEBOOK_CARD_DEFS, notebookDecoratePane, notebookCardStamp } from "../notebook/card.js";
 import { notebookReadForReply } from "../notebook/worker.js";
 
 // One message body, decorated or put back the way SillyTavern drew it.
-//
-// `msgIndex` is optional and only used to redraw the NPC Update tab from the
-// changelog instead of from the model's raw text — see npcDecorateUpdatePane.
-// A caller that does not know the index still gets a correct card, just without
-// the undo buttons on that one tab.
 export function meguminDecorateMessageBody(bodyEl, mesText, msgIndex) {
     try {
         // Plan 010: notebook lines Chomusuke wrote for this reply (not in its text).
@@ -33,7 +22,7 @@ export function meguminDecorateMessageBody(bodyEl, mesText, msgIndex) {
         if (nbText) storeBlocks.Notebook_Update = nbText;
         // The notebook's blocks are drawn (behind a spoiler) on every reply that
         // wrote one, on or off.
-        applyBlocksToMessage(bodyEl, mesText, [...meguminRenderRegistry(), ...NOTEBOOK_CARD_DEFS], {
+        applyBlocksToMessage(bodyEl, mesText, NOTEBOOK_CARD_DEFS, {
             msgIndex,
             storeBlocks,
             // Drawn from the store, so a Revert changes the card without the text.
@@ -41,13 +30,6 @@ export function meguminDecorateMessageBody(bodyEl, mesText, msgIndex) {
             omit: []
         });
         if (typeof msgIndex === "number") {
-            // The card renderer stays generic — it knows nothing about NPCs. The
-            // pane it produced is found by the block id and handed to the NPC
-            // feature to fill in.
-            const pane = bodyEl.querySelector('.meg-block-body[data-block-id="npcUpdate"]');
-            if (pane) npcDecorateUpdatePane(pane, msgIndex);
-            // New NPC: one tab per dossier, each with "Open in NPC Bank".
-            bodyEl.querySelectorAll('.meg-block-body[data-block-id="newNpc"]').forEach(p => npcDecorateNewPane(p));
             bodyEl.querySelectorAll('.meg-block-body[data-block-id="notebook"], .meg-block-body[data-block-id="notebookUpdate"]')
                 .forEach(p => notebookDecoratePane(p, msgIndex, {
                     onChanged: () => meguminScheduleBlocksRefresh(),

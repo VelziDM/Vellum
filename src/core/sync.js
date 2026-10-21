@@ -27,7 +27,6 @@ export const TAB_SYNC_KEYS = {
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
     "The Notebook": ["notebook"],
     "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
-    "NPC Bank": ["npcBank"],
     "Memory": ["memoryCore"],
     "Chomusuke": ["chomusuke"]
 };
@@ -115,13 +114,7 @@ export function applyTabKeysToAllProfiles(title) {
 
         keys.forEach(k => {
             // --- SPECIAL HANDLING: settings travel, content stays put ---
-            if (k === "npcBank" && currentData[k]) {
-                if (!prof[k]) prof[k] = {};
-                const preservedNpcs = prof[k].npcs;
-                prof[k] = JSON.parse(JSON.stringify(currentData[k]));
-                prof[k].npcs = preservedNpcs || [];
-
-            } else if (k === "memoryCore" && currentData[k]) {
+            if (k === "memoryCore" && currentData[k]) {
                 if (!prof[k]) prof[k] = {};
                 const preservedShort = prof[k].shortTermChunks;
                 const preservedLong = prof[k].longTermVault;

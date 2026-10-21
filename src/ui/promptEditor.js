@@ -1,6 +1,6 @@
 // The reusable prompt-editing card.
 //
-// Three tabs render one of these — Ban List, NPC Bank
+// Two tabs render one of these — Ban List
 // and Memory Core — so it is a shared UI component rather than any one feature's.
 
 import { saveProfileToMemory } from "../core/profile.js";

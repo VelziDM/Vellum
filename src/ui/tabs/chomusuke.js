@@ -36,7 +36,6 @@ const PER_REPLY = [
 // When the job runs: occasional, only when that job fires.
 const OCCASIONAL = [
     { key: "memory", title: "Memory", icon: "fa-memory", color: "#3b82f6", desc: "Summarises older chat for the long-term vault." },
-    { key: "npc", title: "NPC Bank", icon: "fa-address-book", color: "#10b981", desc: "Scans for new characters and updates their records." },
     { key: "banList", title: "Banned Phrases", icon: "fa-ban", color: "#ef4444", desc: "Finds the phrases the AI keeps repeating." },
     { key: "styleGen", title: "Writing Style generator", icon: "fa-wand-magic-sparkles", color: "#ec4899", desc: "Writes new writing styles from your tags." }
 ];
@@ -45,7 +44,7 @@ function ensureConfig() {
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = {
             enabled: false, profileId: "", primaryProfileId: "",
-            features: { memory: true, npc: true, banList: true, styleGen: true },
+            features: { memory: true, banList: true, styleGen: true },
         };
     }
     const cfg = localProfile.chomusuke;
@@ -62,7 +61,6 @@ function featureOff(key) {
     switch (key) {
         case "notebook": return notebookEnabled() ? null : { text: "The Notebook is off", tab: "notebook" };
         case "memory": return p.memoryCore && p.memoryCore.enabled ? null : { text: "Memory is off", tab: "memory" };
-        case "npc": return p.npcBank && p.npcBank.enabled ? null : { text: "NPC Bank is off", tab: "npc" };
         default: return null;
     }
 }

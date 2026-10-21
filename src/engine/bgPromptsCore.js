@@ -6,7 +6,6 @@
 /** Every background job, in the order Settings lists them. */
 export const BG_JOBS = [
     { id: "memory", label: "Memory" },
-    { id: "npc", label: "NPC Bank" },
     { id: "notebook", label: "The Notebook" },
     { id: "banlist", label: "Banned Phrases" },
     { id: "style", label: "Writing Style" }

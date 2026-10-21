@@ -30,8 +30,6 @@ import {
 import {
     activeStoryPlanRequest,
     activeBanListChat,
-    activeNpcScanRequest,
-    setActiveNpcScanRequest,
     activeMemorySummarizationRequest,
     activeGenerationOrder,
     isBackgroundGenerationActive,
@@ -63,9 +61,6 @@ import {
     updateMemoryVisuals,
 } from "./src/features/memory/index.js";
 import { memUpdateSemanticQueryDebounced, memEnsureSemanticQueryFresh } from "./src/features/memory/vectordb.js";
-import { npcParseBlock, meguminFindNpcDossiers, npcCreateRecord } from "./src/features/npc/data.js";
-import { npcParseUpdateBlocks, npcApplyUpdates } from "./src/features/npc/updates.js";
-import { renderNpcList } from "./src/features/npc/ui.js";
 import {
     stateOnMessageReceived, stateOnSwiped, stateOnSwipeDeleted, stateOnEdited, stateOnDeleted, stateOnChatLoaded,
     setWorldStateChangedHook, NOT_A_REPLY as BLOCKS_NOT_A_REPLY,
@@ -423,15 +418,15 @@ jQuery(async () => {
                     if (stateOnChatLoaded()) meguminScheduleBlocksRefresh();
                 }, 250);
             });
-            // REPLY ARRIVAL (reads, director, memory, NPC bank)
+            // REPLY ARRIVAL (reads, memory)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {
                 updateMemoryVisuals();
-                // Master switch off: nothing below runs (no reads, director, memory, NPC bank).
+                // Master switch off: nothing below runs (no reads, memory).
                 if (!suiteEnabled()) return;
 
-                // --- NOTEBOOK / NPC BANK STATE STORES ---
-                // The store turns chat events into per-message records (notebook,
-                // NPC journal). Cards redraw when one lands.
+                // --- NOTEBOOK STATE STORE ---
+                // The store turns chat events into per-message records. Cards
+                // redraw when one lands.
                 try {
                     if (stateOnMessageReceived(receivedId, receivedType)) meguminScheduleBlocksRefresh();
                 } catch (e) {
@@ -482,90 +477,6 @@ jQuery(async () => {
                     }
                 }
 
-                // AUTO-EXTRACT NPCs
-                const npcBank = localProfile?.npcBank;
-                // Stamped next to the capture of `npcBank`, the same way `sp` is stamped
-                // above. This block never awaits, so the risk is not a chat switch mid-run:
-                // it is that localProfile is ALREADY behind. CHAT_CHANGED reloads it 200ms
-                // late, so a message arriving inside that window would parse the new chat's
-                // dossiers and push them into the previous chat's bank. saveProfileToMemory()
-                // would refuse to write that to disk, but the objects would stay in memory
-                // and ride along on the next legitimate save.
-                const npcLiveKey = getCharacterKey() || "default";
-                if (npcBank && npcBank.enabled && _loadedProfileKey && npcLiveKey !== _loadedProfileKey) {
-                    console.debug(`[Megumin-Suite] NPC auto-extract declined: the NPC bank in memory belongs to "${_loadedProfileKey}" but this message arrived in "${npcLiveKey}". No NPCs were added, so none land in the wrong chat's bank.`);
-                } else if (npcBank && npcBank.enabled) {
-                    const chat = getContext().chat;
-                    if (chat && chat.length) {
-                        const lastMsg = chat[chat.length - 1];
-                        if (!lastMsg.is_user && !lastMsg.is_system) {
-                            const dossiers = meguminFindNpcDossiers(lastMsg.mes);
-                            let added = false;
-                            let matched = dossiers.length > 0;
-                            for (const dossier of dossiers) {
-                                const npcName = dossier.name;
-                                const npcContent = dossier.raw;
-                                if (!npcBank.npcs) npcBank.npcs = [];
-                                if (!npcBank.npcs.find(n => (n.name || "").trim().toLowerCase() === npcName.toLowerCase())) {
-                                    // Parse structured fields from the raw block
-                                    const parsed = npcParseBlock(npcContent);
-                                    npcBank.npcs.push(npcCreateRecord({
-                                        parsed,
-                                        name: npcName,
-                                        messageIndex: chat.length - 1
-                                    }));
-                                    added = true;
-                                    toastr.success(`NPC added to Bank: ${npcName}`, "Megumin Suite");
-                                    if ($("#npc_bank_list").length) renderNpcList();
-                                }
-                            }
-                            // --- APPLY DOSSIER UPDATES ---
-                            // After the new-NPC pass, so a dossier and an update
-                            // arriving in the same reply land in that order and
-                            // the update has someone to apply to.
-                            const parsedUpdates = npcParseUpdateBlocks(lastMsg.mes);
-                            if (parsedUpdates.length) {
-                                const { applied, refused } = npcApplyUpdates(parsedUpdates, { messageIndex: chat.length - 1 });
-                                if (applied.length) {
-                                    added = true;
-                                    const who = [...new Set(applied.map(e => e.npc))].join(", ");
-                                    toastr.info(
-                                        applied.map(e => `${e.label}: ${e.op === "+" ? "added" : e.op === "-" ? "removed" : "replaced"}`).join(" · "),
-                                        `Megumin Suite — ${who} updated`
-                                    );
-                                }
-                                // Refusals are the model going outside the field
-                                // list it was given. Not worth a toast, but a
-                                // silent drop is how a broken update block stays
-                                // broken for weeks.
-                                refused.forEach(r => console.debug(`[Megumin-Suite] NPC update declined for "${r.name}": ${r.reason}.`));
-                            }
-
-                            if (added) saveProfileToMemory();
-                            if (!matched && /New[ _]NPC/i.test(lastMsg.mes || "")) {
-                                // Slice from the block opener, not from character 0, so the debug
-                                // line shows the dossier that failed to parse rather than prose.
-                                const npcMes = lastMsg.mes || "";
-                                const npcAt = Math.max(0, npcMes.search(/New[ _]NPC/i));
-                                console.debug(`[Megumin-Suite] New NPC block present but unparseable in message ${chat.length - 1}`, npcMes.slice(npcAt, npcAt + 200));
-                            }
-                        }
-                    }
-                }
-
-            });
-        }
-
-        $("body").on("click", "#prompt-slot-fixed-btn", function () { initProfile(); updateCharacterDisplay(); switchTab(0); $("#prompt-slot-modal-overlay").fadeIn(250).css("display", "flex"); });
-        $("body").off("click", "#close-prompt-slot-modal, #prompt-slot-modal-overlay").on("click", "#close-prompt-slot-modal, #prompt-slot-modal-overlay", function (e) {
-            if (e.target === this) {
-                if (isDevEngineDirty) {
-                    if (!confirm("You have unsaved changes in your custom engine. Are you sure you want to close? Changes will be lost.")) return;
-                    setDevEngineDirty(false);
-                }
-                saveProfileToMemory();
-                $("#prompt-slot-modal-overlay").fadeOut(200);
-            }
         });
         // ── QUICK GEN BUTTON (stub) ──
         // ponytail: image gen is out; the button stays visible so layout and muscle

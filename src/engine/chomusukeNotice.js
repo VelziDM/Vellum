@@ -11,10 +11,10 @@
 
 // What each job is called in a message (runWithChomusuke's feature keys and
 // the parts of a combined call).
+
 export const CHOMUSUKE_JOB_NAMES = {
     notebook: "The Notebook",
     memory: "the memory summary",
-    npc: "the NPC Bank",
     banList: "Banned Phrases",
     styleGen: "the writing style",
     test: "the test"

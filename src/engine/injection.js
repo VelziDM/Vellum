@@ -2,8 +2,8 @@
 // The prompt interceptor — the last thing to touch the messages before they go.
 //
 // Reads the in-flight request markers to decide which prompt shape to emit: the
-// roleplay one, or one of the background tasks (ban list, NPC scan, memory
-// summary). Everything it needs is already a module.
+// roleplay one, or one of the background tasks (ban list, memory summary).
+// Everything it needs is already a module.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { extension_settings, substituteParams, Popup, POPUP_TYPE } from "../st.js";
@@ -12,14 +12,12 @@ import { extensionName } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
 import {
     activeBanListChat,
-    activeNpcScanRequest, activeNpcUpdateRequest,
     activeMemorySummarizationRequest, activeWorldExtractRequest,
     activeGenerationOrder, isBackgroundGenerationActive,
 } from "../core/activeRequests.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { meguminEnginePrompts } from "../prompts/meguminEngine.js";
 import { memEnsureSemanticQueryFresh } from "../features/memory/vectordb.js";
-import { npcBuildDossierPrompt } from "../features/npc/fields.js";
 import { escapeRegex } from "../utils/regex.js";
 import { buildBaseDict } from "./buildBaseDict.js";
 import { hideBlocksInMessages } from "./hideBlocks.js";
@@ -56,39 +54,6 @@ async function buildPromptInjection(data, type) {
     // an install that has never seen the setting is off rather than on.
     const disablePrefill = extension_settings[extensionName]?.globalSettings?.enableUtilityPrefill !== true;
 
-    // --- INJECT NPC SCAN PROMPT ---
-    if (activeNpcScanRequest) {
-        messages.length = 0;
-        const nbPrompts = (localProfile.npcBank && localProfile.npcBank.customPromptsEnabled && localProfile.npcBank.customPrompts) ? localProfile.npcBank.customPrompts : DEFAULT_PROMPTS.npcBank;
-        // Same instruction the roleplay prompt carries, so a scan writes dossiers
-        // in the shape the parser and the card expect rather than in whatever the
-        // rules text happened to describe before the fields were data.
-        const formatTemplate = npcBuildDossierPrompt(nbPrompts.dossierRules || DEFAULT_PROMPTS.npcBank.dossierRules);
-        // What the lorebook says about the people and places in the story.
-        const scanLore = loreBlock(await loreForChat());
-
-        messages.push({
-            "role": "system",
-            "content": "You are an expert narrative analyst and world-builder."
-        });
-        messages.push({
-            "role": "user",
-            "content": `Analyze the following story history. Identify any SIGNIFICANT NPCs (characters with names and dialogue/impact) that are NOT in this list of already known NPCs: [${activeNpcScanRequest.existingNames || "None"}].\n\nFor every new significant NPC you find, generate a dossier using EXACTLY this format:\n\n${formatTemplate}\n\n${scanLore ? `Use this lore for what it says about them:\n${scanLore}\n\n` : ""}Story History:\n<chat>\n${activeNpcScanRequest.chatText}\n</chat>`
-        });
-        messages.push({
-            "role": "system",
-            "content": "Think deeply about who is missing from the known list, then output their dossiers sequentially."
-        });
-        if (!disablePrefill) {
-            messages.push({
-                "role": "assistant",
-                "content": "<think>\nScanning for missing significant NPCs...\n"
-            });
-        }
-        console.log(`[${extensionName}] 🎯 Injected NPC Scan array in memory.`);
-        return;
-    }
-
     // --- BACKGROUND EXTRACTION (Chomusuke side reads: the notebook) ---
     // The whole prompt was built in advance (e.g. renderNotebookWorkerPrompt).
     if (activeWorldExtractRequest) {
@@ -100,38 +65,6 @@ async function buildPromptInjection(data, type) {
             messages.push({ "role": "assistant", "content": r.prefill });
         }
         console.log(`[${extensionName}] 🎯 Injected the background extraction prompt.`);
-        return;
-    }
-
-    // --- INJECT FORCED NPC UPDATE PROMPT ---
-    // The refresh button on an NPC card. Unlike the in-story update, this asks
-    // about ONE named NPC and hands over their whole record, so the model is
-    // comparing against what is actually on file rather than recalling it.
-    if (activeNpcUpdateRequest) {
-        messages.length = 0;
-        const npcLore = loreBlock(await loreForNames([activeNpcUpdateRequest.npcName]));
-        const r = activeNpcUpdateRequest;
-
-        messages.push({
-            "role": "system",
-            "content": "You are an expert narrative analyst who maintains character records. You compare a character's file against what has happened in the story and report only what changed."
-        });
-        messages.push({
-            "role": "user",
-            "content": `Here is the record currently on file for ${r.npcName}:\n\n<npc_record>\n${r.npcText}\n</npc_record>\n\n${npcLore ? `What the lore says about ${r.npcName}:\n${npcLore}\n\n` : ""}Here is the story so far:\n\n<chat>\n${r.chatText}\n</chat>\n\n${r.rules}\n\nOutput ONLY the <NPC_Update> block for ${r.npcName}. If nothing on file has changed, output exactly: NO CHANGE`
-        });
-        messages.push({
-            "role": "system",
-            "content": "Think about which fields the story has actually moved, then output the block. Do not restate anything that is already correct on the record."
-        });
-        if (!disablePrefill) {
-            messages.push({
-                "role": "assistant",
-                "content": `<think>\nComparing the record for ${r.npcName} against what has happened since it was written...\n`
-            });
-        }
-
-        console.log(`[${extensionName}] 🎯 Injected forced NPC Update array in memory.`);
         return;
     }
 

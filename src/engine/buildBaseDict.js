@@ -2,7 +2,7 @@
 // Assembling the placeholder dictionary the preset is filled from.
 //
 // The top of the graph: it reads from every feature — the notebook, story
-// config, NPC, memory — and nothing reads from it except the injector and the
+// config, memory — and nothing reads from it except the injector and the
 // token counter. That is why it moved last rather than first: extracting it
 // early would have made it import from index.js instead of from the features.
 // ────────────────────────────────────────────────────────────────────────────
@@ -16,13 +16,10 @@ import { hardcodedLogic } from "../../data/database.js";
 import { applyEnhancedDialogue } from "../../data/modes/v10.js";
 import { buildBlocksEnvelope } from "../features/blocks/registry.js";
 import { buildConfigBlock } from "../features/storyconfig/config.js";
-import { npcBuildTextFromData } from "../features/npc/data.js";
-import { npcBuildDossierPrompt, npcBuildUpdatePrompt } from "../features/npc/fields.js";
-import { memGetCachedKeywords } from "../features/memory/keywords.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
 import { meguminOverridableSlots, meguminSlotIsLive, meguminModuleTrigger } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
-import { notebookPromptBlock } from "../state/index.js";
+import { notebookPromptBlock, notebookCurrentPhase } from "../state/index.js";
 import { NOTEBOOK_CRAFT } from "../prompts/notebook.js";
 
 export function buildBaseDict(isTokenCount = false) {
@@ -408,171 +405,11 @@ export function buildBaseDict(isTokenCount = false) {
         }
     }
 
-    // --- 5.5 NPC BANK INJECTION ---
-    dict["[[npc_dossier]]"] = "";
-    dict["[[npc_dossier2]]"] = "";
-    dict["[[npc list]]"] = "";
-    dict["[[npc_updates]]"] = "";
-
-    if (localProfile.npcBank && localProfile.npcBank.enabled) {
-        
-        // --- OOC Trigger Check (Applies ONLY to the Dossier Template) ---
-        let allowDossierInjection = true;
-        if (localProfile.npcBank.oocTrigger) {
-            allowDossierInjection = false;
-            const context = typeof getContext === 'function' ? getContext() : null;
-            if (context && context.chat) {
-                const lastUserMsg = context.chat.slice().reverse().find(m => m.is_user);
-                if (lastUserMsg && lastUserMsg.mes) {
-                    const msgLower = lastUserMsg.mes.toLowerCase();
-                    if (msgLower.includes("npc") || msgLower.includes("dossier")) {
-                        allowDossierInjection = true;
-                    }
-                }
-            }
-        }
-
-        // --- Construct Ignore List ---
-        let knownNamesText = "";
-        let ignoredArr = [];
-        if (localProfile.npcBank.npcs && localProfile.npcBank.npcs.length > 0) {
-            ignoredArr.push(...localProfile.npcBank.npcs.map(n => n.name));
-        }
-        if (localProfile.npcBank.ignoredNames) {
-            ignoredArr.push(...localProfile.npcBank.ignoredNames.split(',').map(s => s.trim()).filter(s => s));
-        }
-        ignoredArr = [...new Set(ignoredArr)];
-        
-        if (ignoredArr.length > 0) {
-            knownNamesText = `[CRITICAL RULE: DO NOT generate a dossier for the following already-known or ignored characters: ${ignoredArr.join(", ")}]\n\n`;
-        }
-
-        if (allowDossierInjection) {
-            const nbPrompts = (localProfile.npcBank.customPromptsEnabled && localProfile.npcBank.customPrompts) ? localProfile.npcBank.customPrompts : DEFAULT_PROMPTS.npcBank;
-
-            // Inject Ignore List alongside the Dossier Rules!
-            // The rules are the author's; the fill-in template inside them is
-            // generated from the field list, so a field added in the tab is
-            // asked for here without a prompt edit.
-            dict["[[npc_dossier]]"] = npcBuildDossierPrompt(nbPrompts.dossierRules || DEFAULT_PROMPTS.npcBank.dossierRules) + knownNamesText;
-            dict["[[npc_dossier2]]"] = "[NPC Dossier block here]";
-        }
-
-        // --- Update rules ---
-        // Deliberately NOT gated on allowDossierInjection. The OOC trigger is
-        // about whether to spend tokens asking for NEW dossiers; an NPC already
-        // in the bank should keep up to date whether or not the user said the
-        // word "npc" this turn.
-        if (localProfile.npcBank.npcs && localProfile.npcBank.npcs.length > 0) {
-            const updatePrompt = npcBuildUpdatePrompt();
-            dict["[[npc_updates]]"] = updatePrompt;
-
-            // AND appended to [[npc_dossier]], which is the only one of the two
-            // that existing presets actually contain.
-            //
-            // A new tag reaches the model only if a preset has an anchor for it,
-            // and every preset in the wild was written before [[npc_updates]]
-            // existed — so on its own it went nowhere and the rules were never
-            // injected at all. [[npc_dossier]] is already in those presets and
-            // already carries rules rather than a block, which is exactly what
-            // this is. The separate tag stays supported for a preset that wants
-            // to place the rules somewhere of its own.
-            if (updatePrompt) {
-                dict["[[npc_dossier]]"] = dict["[[npc_dossier]]"]
-                    ? dict["[[npc_dossier]]"] + "\n\n" + updatePrompt
-                    : updatePrompt;
-            }
-        }
-
-        // --- NPC List Injection (TF-IDF Context Recall) ---
-        // OPTIMIZED: Pre-computes NPC text + IDF in single passes (O(K×N) instead of O(K×N²))
-        if (localProfile.npcBank.npcs && localProfile.npcBank.npcs.length > 0) {
-            const context = typeof getContext === 'function' ? getContext() : null;
-            if (context && context.chat) {
-                // Use cached keywords (shared with vault retrieval in same prompt build)
-                const { keywords } = memGetCachedKeywords(context.chat, 4);
-                
-                if (keywords.length > 0) {
-                    const npcs = localProfile.npcBank.npcs;
-                    const totalNpcs = npcs.length;
-
-                    // Pre-compute NPC text + lowercase ONCE (was being rebuilt inside inner loops)
-                    const npcTexts = npcs.map(n => npcBuildTextFromData(n).toLowerCase());
-                    const npcNames = npcs.map(n => n.name.toLowerCase());
-
-                    // Pre-compute document frequency per keyword across all NPCs in ONE pass
-                    const npcDfMap = new Map();
-                    for (const kw of keywords) {
-                        let count = 0;
-                        for (let i = 0; i < npcTexts.length; i++) {
-                            if (npcTexts[i].includes(kw)) count++;
-                        }
-                        if (count > 0 && (totalNpcs <= 2 || count <= Math.ceil(totalNpcs * 0.5))) {
-                            npcDfMap.set(kw, Math.max(1, Math.round(10 / count)));
-                        }
-                    }
-
-                    let scoredNpcs = [];
-                    npcs.forEach((n, idx) => {
-                        if (n.imageOnly) return; // Skip if "Image Tags Only" is toggled
-                        
-                        let score = 0;
-                        let matchedWords = [];
-                        const contentLower = npcTexts[idx];
-                        const nameLower = npcNames[idx];
-                        
-                        for (const [kw, baseWeight] of npcDfMap) {
-                            if (contentLower.includes(kw)) {
-                                let weight = baseWeight;
-                                
-                                // Massive bonus if the keyword matches the NPC's actual name
-                                if (nameLower.includes(kw)) {
-                                    weight += 50;
-                                }
-                                
-                                score += weight;
-                                matchedWords.push(`${kw}(+${weight})`);
-                            }
-                        }
-                        
-                        // Require at least 1 point to be considered "relevant"
-                        if (score >= 1) {
-                            scoredNpcs.push({ ...n, score, matchedWords });
-                        }
-                    });
-                    
-                    if (scoredNpcs.length > 0) {
-                        // Sort by highest score
-                        scoredNpcs.sort((a, b) => b.score - a.score);
-                        
-                        // Enforce the Injection Limit chosen in the UI
-                        const limit = localProfile.npcBank.injectionLimit || 3;
-                        const topNpcs = scoredNpcs.slice(0, limit);
-                        
-                        let npcXML = "<retrieved_npcs>\n";
-                        topNpcs.forEach(n => { npcXML += `<${n.name}>\n${npcBuildTextFromData(n)}\n</${n.name}>\n\n`; });
-                        npcXML += "</retrieved_npcs>";
-                        
-                        dict["[[npc list]]"] = `[RELEVANT NPCs]\nThe following are details of known NPCs relevant to the current context:\n${npcXML}`;
-                    }
-                }
-            }
-        }
-    }
-
     // --- MASTER BLOCK ENVELOPE ---
-    // The NPC Bank's slot lines, and the notebook's ask when it is on. Whether
-    // it reaches the model is decided later, by whether the preset has a
-    // [[blocks]] anchor in it.
+    // The notebook's ask when it is on. Whether it reaches the model is decided
+    // later, by whether the preset has a [[blocks]] anchor in it.
     //
-    // LAST, AND IT HAS TO BE LAST. The envelope reads the dict it is handed: a
-    // conditional slot asks `slotRequires` about a tag ([[npc_dossier2]],
-    // [[npc_updates]]). This used to sit above the Memory Core and NPC Bank
-    // sections, so every NPC tag it consulted was still empty and the
-    // <New_NPC> slot could never appear in the envelope no matter what the bank
-    // was doing. Anything that populates a tag a block reads must run before
-    // this line.
-    dict["[[blocks]]"] = buildBlocksEnvelope(dict);
+    dict["[[blocks]]"] = buildBlocksEnvelope();
 
     return dict;
 }

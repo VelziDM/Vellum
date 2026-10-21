@@ -14,4 +14,3 @@ export {
 // the whole set.
 export { banListPrompts } from "./banList.js";
 export { memoryCorePrompts } from "./memoryCore.js";
-export { npcBankPrompts } from "./npcBank.js";

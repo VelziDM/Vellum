@@ -18,7 +18,6 @@ import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSett
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderNotebookTab } from "../features/notebook/ui.js";
 import { renderBanList } from "../features/banlist/ui.js";
-import { renderNpcBank } from "../features/npc/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
 import { renderChomusuke } from "./tabs/chomusuke.js";
 
@@ -31,7 +30,6 @@ import { renderChomusuke } from "./tabs/chomusuke.js";
 export const tabsUI = [
     { id: "preset", title: "Preset & Thinking", sub: "Choose the preset, how it thinks, and the story's standing rules.", icon: "fa-server", render: renderCoreAndCot },
     { id: "notebook", title: "The Notebook", sub: "The truths the story is hiding, the clues it plants, and when they come out.", icon: "fa-book", render: renderNotebookTab },
-    { id: "npc", title: "NPC Bank", sub: "The characters the story has met, kept and tracked.", icon: "fa-address-book", render: renderNpcBank },
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
