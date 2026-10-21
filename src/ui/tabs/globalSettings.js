@@ -75,7 +75,7 @@ export function renderGlobalSettings(c) {
     $content.append(`
         <div class="mtab-toggle-row ${suiteOn ? 'active' : ''}" id="gs_toggle_suite" style="cursor: pointer; ${suiteOn ? 'border-color: #10b981;' : ''}">
             <div class="toggle-info">
-                <div class="toggle-label"><i class="fa-solid fa-power-off" style="color: #10b981;"></i> Megumin Suite On</div>
+                <div class="toggle-label"><i class="fa-solid fa-power-off" style="color: #10b981;"></i> Vellum On</div>
                 <div class="toggle-desc">The master switch, also on the top bar. <b>Off:</b> prompts go out exactly as SillyTavern builds them and nothing runs in the background after a reply. Cards and images already in the chat still show, and the buttons in this window still work.</div>
             </div>
             <div class="ps-switch" style="${suiteOn ? 'background: #10b981;' : ''}"></div>
@@ -169,22 +169,18 @@ export function renderGlobalSettings(c) {
     $content.append(`<div class="wstyle-section-head green" style="margin-top:8px;"><i class="fa-solid fa-circle-info"></i> About</div>`);
     $content.append(`
         <div class="mtab-panel gs-about" style="margin: 0;">
-            <div class="gs-about-title">Megumin Suite ${SUITE_VERSION}</div>
-            <div class="gs-about-by">Made by KazumaONIISAN</div>
+            <div class="gs-about-title">Vellum ${SUITE_VERSION}</div>
+            <div class="gs-about-by">A personal fork of Megumin Suite</div>
 
             <div class="gs-link-grid">
                 <a class="gs-link" href="https://github.com/Arif-salah/Megumin-Suite" target="_blank" rel="noopener noreferrer">
                     <i class="fa-brands fa-github"></i>
-                    <span><b>GitHub</b><small>Source, issues and releases</small></span>
+                    <span><b>Original project</b><small>Megumin Suite — all credit to its author</small></span>
                 </a>
-                <div class="gs-link gs-link-static">
-                    <i class="fa-brands fa-paypal" style="color:#3b82f6;"></i>
-                    <span><b>PayPal</b><small>arifsalah10@gmail.com</small></span>
-                </div>
-                <div class="gs-link gs-link-static">
-                    <i class="fa-solid fa-coins" style="color:#a1a1aa;"></i>
-                    <span><b>Litecoin</b><small>LSjf1DczHxs3GEbkoMmi1UWH2GikmXDtis</small></span>
-                </div>
+                <a class="gs-link" href="https://github.com/VelziDM/Megumin-Suite-Beta" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-brands fa-github"></i>
+                    <span><b>Branch it started from</b><small>the VelziDM beta branch</small></span>
+                </a>
             </div>
         </div>
     `);

@@ -64,14 +64,14 @@ export function memEmbedPieces(chunk) {
 export async function memInsertToVectorDB(chunks, expectIdentity) {
     if (!chunks || chunks.length === 0) return true;
     const collectionId = memGetCollectionId();
-    if (!collectionId) { console.warn("Megumin Suite: no character or group yet, skipping vector insert."); return false; }
+    if (!collectionId) { console.warn("Vellum: no character or group yet, skipping vector insert."); return false; }
     // Callers that can run for minutes (chunk processing, vault migration) hand over the
     // identity their run started on. collectionId above is computed live, so without this
     // the rows of a run that started on one character would be filed under whichever
     // character is loaded now. Call sites that pass nothing are immediate UI actions and
     // keep their old behaviour.
     if (expectIdentity !== undefined && meguminActiveDataIdentity() !== expectIdentity) {
-        console.debug(`[Megumin-Suite] Vector insert declined: these ${chunks.length} chunk(s) belong to "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now. Nothing was sent to the vector database.`);
+        console.debug(`[Vellum] Vector insert declined: these ${chunks.length} chunk(s) belong to "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now. Nothing was sent to the vector database.`);
         return false;
     }
     // ST's /api/vector/insert requires items with { hash: Number, text: String, index: Number }
@@ -93,7 +93,7 @@ export async function memInsertToVectorDB(chunks, expectIdentity) {
     try {
         for (let i = 0; i < totalBatches; i++) {
             if (expectIdentity !== undefined && meguminActiveDataIdentity() !== expectIdentity) {
-                console.debug(`[Megumin-Suite] Vector insert stopped at batch ${i + 1}/${totalBatches}: it started on "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now.`);
+                console.debug(`[Vellum] Vector insert stopped at batch ${i + 1}/${totalBatches}: it started on "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now.`);
                 ok = false;
                 break;
             }
@@ -113,7 +113,7 @@ export async function memInsertToVectorDB(chunks, expectIdentity) {
             // A 500 from the blown embedder resolves the promise, so `catch` never sees it.
             if (!res.ok) {
                 const detail = await res.text().catch(() => "");
-                console.error(`Megumin Suite: vector insert HTTP ${res.status} on batch ${i + 1}/${totalBatches}.`, detail.slice(0, 500));
+                console.error(`Vellum: vector insert HTTP ${res.status} on batch ${i + 1}/${totalBatches}.`, detail.slice(0, 500));
                 ok = false;
                 break;
             }
@@ -123,7 +123,7 @@ export async function memInsertToVectorDB(chunks, expectIdentity) {
             }
         }
     } catch (e) {
-        console.warn("Megumin Suite: Vector Insert failed.", e);
+        console.warn("Vellum: Vector Insert failed.", e);
         ok = false;
     } finally {
         if (showProgress && typeof showKazumaProgress === 'function') {
@@ -143,11 +143,11 @@ export async function memDeleteFromVectorDB(ids, expectIdentity) {
     // vault, so if that profile is not the active chat's the hashes belong to a different
     // character than the collection they would be removed from.
     if (_loadedProfileKey && (getCharacterKey() || "default") !== _loadedProfileKey) {
-        console.debug(`[Megumin-Suite] Vector delete declined: the vault entries come from the profile for "${_loadedProfileKey}" but the active chat is now "${getCharacterKey() || "default"}". No rows were deleted.`);
+        console.debug(`[Vellum] Vector delete declined: the vault entries come from the profile for "${_loadedProfileKey}" but the active chat is now "${getCharacterKey() || "default"}". No rows were deleted.`);
         return;
     }
     if (expectIdentity !== undefined && meguminActiveDataIdentity() !== expectIdentity) {
-        console.debug(`[Megumin-Suite] Vector delete declined: these ${ids.length} id(s) belong to "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now. No rows were deleted.`);
+        console.debug(`[Vellum] Vector delete declined: these ${ids.length} id(s) belong to "${expectIdentity}" but "${meguminActiveDataIdentity()}" is active now. No rows were deleted.`);
         return;
     }
     // ST's /api/vector/delete requires { hashes: Number[] }, not string ids
@@ -166,7 +166,7 @@ export async function memDeleteFromVectorDB(ids, expectIdentity) {
             headers: getRequestHeaders(),
             body: JSON.stringify({ collectionId, hashes, source: 'transformers' })
         });
-    } catch (e) { console.warn("Megumin Suite: Vector Delete failed.", e); }
+    } catch (e) { console.warn("Vellum: Vector Delete failed.", e); }
 }
 
 // Background task: Queries the DB silently while you chat so the AI's prompt is always ready
@@ -247,7 +247,7 @@ export async function memUpdateSemanticQuery() {
             })
         });
         if (!res.ok) {
-            console.error(`Megumin Suite: vector query HTTP ${res.status}.`);
+            console.error(`Vellum: vector query HTTP ${res.status}.`);
             currentSemanticMatches = [];
         } else {
             const data = await res.json();
@@ -281,7 +281,7 @@ export async function memUpdateSemanticQuery() {
             }
         }
     } catch (e) {
-        console.warn("Megumin Suite: Semantic query failed, falling back to TF-IDF.", e);
+        console.warn("Vellum: Semantic query failed, falling back to TF-IDF.", e);
         currentSemanticMatches = [];
     }
 }

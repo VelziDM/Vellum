@@ -44,7 +44,7 @@ export function fireRefreshHook(name, ...args) {
     try {
         return fn(...args);
     } catch (e) {
-        console.error(`[Megumin Suite] Refresh hook "${name}" failed:`, e);
+        console.error(`[Vellum] Refresh hook "${name}" failed:`, e);
     }
 }
 

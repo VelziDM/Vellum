@@ -115,7 +115,7 @@ async function buildPromptInjection(data, type) {
     // do not pay for it. Only on the real generation path — the token counter and
     // the prompt preview call buildBaseDict(true) and never reach this line.
     try { await memEnsureSemanticQueryFresh(); } catch (e) {
-        console.warn("[Megumin Suite] Semantic refresh before prompt build failed; using what is in hand.", e);
+        console.warn("[Vellum] Semantic refresh before prompt build failed; using what is in hand.", e);
     }
 
     const dict = buildBaseDict();

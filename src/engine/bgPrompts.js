@@ -128,7 +128,7 @@ export async function reviewBackgroundPrompt(messages, job) {
     if (!confirmed) {
         addToLog(makeLogEntry({ job, connection, messages, status: "cancelled" }));
         messages.length = 0;
-        toastr.info(`${label}: you cancelled the prompt, so nothing was sent.`, "Megumin Suite");
+        toastr.info(`${label}: you cancelled the prompt, so nothing was sent.`, "Vellum");
         try { const ctx = getContext(); if (ctx && typeof ctx.stopGeneration === "function") ctx.stopGeneration(); } catch (e) { /* already stopped */ }
         return false;
     }
@@ -165,8 +165,8 @@ export async function openBackgroundLog() {
             const text = e.messages.map(m => `========== [ ${String(m.role || "").toUpperCase()} ] ==========\n${m.text}`).join("\n\n");
             $row.find(".bgp-pre").text(text);
             $row.find(".bgp-copy").on("click", async () => {
-                try { await navigator.clipboard.writeText(text); toastr.success("Copied.", "Megumin Suite"); }
-                catch (err) { toastr.error("Your browser didn't allow copying.", "Megumin Suite"); }
+                try { await navigator.clipboard.writeText(text); toastr.success("Copied.", "Vellum"); }
+                catch (err) { toastr.error("Your browser didn't allow copying.", "Vellum"); }
             });
             $list.append($row);
         });

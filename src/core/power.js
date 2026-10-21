@@ -30,8 +30,8 @@ export function setSuiteEnabled(on) {
     saveSettingsDebounced();
     syncPowerUI();
     toastr[on ? "success" : "warning"](
-        on ? "Megumin Suite is on." : "Megumin Suite is off. Prompts go out exactly as SillyTavern builds them, and nothing runs in the background.",
-        "Megumin Suite"
+        on ? "Vellum is on." : "Vellum is off. Prompts go out exactly as SillyTavern builds them, and nothing runs in the background.",
+        "Vellum"
     );
 }
 
@@ -43,8 +43,8 @@ export function syncPowerUI() {
     $("#ps_btn_power")
         .html(`<i class="fa-solid fa-power-off"></i> ${on ? "On" : "Off"}`)
         .attr("title", on
-            ? "Megumin Suite is on. Click to turn the whole suite off."
-            : "Megumin Suite is off: prompts go out as SillyTavern builds them and nothing runs in the background. Click to turn it on.")
+            ? "Vellum is on. Click to turn the whole suite off."
+            : "Vellum is off: prompts go out as SillyTavern builds them and nothing runs in the background. Click to turn it on.")
         .css({ color: on ? "#10b981" : "#ef4444", "border-color": on ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.45)" });
     $("#gs_toggle_suite")
         .toggleClass("active", on)

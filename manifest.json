@@ -1,12 +1,12 @@
 {
-  "display_name": "Megumin Suite beta",
+  "display_name": "Vellum",
   "loading_order": 100,
   "requires": [],
   "optional": [],
   "js": "index.js",
   "css": "style.css",
   "author": "KazumaONIISAN",
-  "version": "1.1.0",
-  "generate_interceptor": "megumin_memory_intercept",
+  "version": "0.1.0",
+  "generate_interceptor": "vellum_memory_intercept",
   "homePage": ""
 }

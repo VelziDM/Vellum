@@ -107,7 +107,7 @@ export function meguminCompactStoredPrompts() {
 
     if (touched > 0) {
         saveSettingsDebounced();
-        console.log(`[Megumin Suite] Compacted duplicated prompt text across ${touched} profiles: `
+        console.log(`[Vellum] Compacted duplicated prompt text across ${touched} profiles: `
             + `${(before / 1024).toFixed(0)}KB -> ${(after / 1024).toFixed(0)}KB in settings.json.`);
     }
 }

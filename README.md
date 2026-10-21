@@ -1,4 +1,4 @@
-# Megumin Suite — Beta Changelog
+# Vellum — Beta Changelog
 
 Running notes for the **beta** branch. Newest release first.
 
@@ -6,6 +6,23 @@ This file is history only. For what the extension is and how to use it, see the
 README on the stable branch.
 
 **[→ Install / update](https://drive.google.com/file/d/16Ps0byP9zDDLJSX5fqNbFmq-DBTjPlMT/view)**
+
+---
+
+> **Vellum is my own fork of Megumin Suite**, built for my own use: I kept the
+> parts that solved my problems and rewrote or cut the rest.
+>
+> Original: [Arif-salah/Megumin-Suite-Beta](https://github.com/Arif-salah/Megumin-Suite-Beta)
+> — all credit for the original work goes to its author and contributors.
+> The [VelziDM fork](https://github.com/VelziDM/Megumin-Suite-Beta) is where this
+> branch started from.
+>
+> What changed in this fork: the image gen, the Story Director, the add-ons
+> tab, the whole block system (Blocks, World State, Bonds, NPC Bank, the
+> Notebook), the Side Panel, the Dynamic Ban List and the Dev Mode are gone.
+> What is left is the preset (V12 "Prometheus"), the memory, the writing
+> styles and the helper model — and those are being rewritten, one at a time.
+> The older generations are kept in a local archive, not in git.
 
 ---
 

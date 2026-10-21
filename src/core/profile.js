@@ -487,7 +487,7 @@ export function pruneFutureData() {
 
     if (changesMade) {
         saveProfileToMemory();
-        console.log(`[Megumin Suite] Pruned/Adjusted out-of-bounds future data (chat length: ${chatLength})`);
+        console.log(`[Vellum] Pruned/Adjusted out-of-bounds future data (chat length: ${chatLength})`);
         
         fireRefreshHook(REFRESH.MEMORY_ACCORDION);
         fireRefreshHook(REFRESH.MEMORY_VAULT, $("#mem_vault_search").val() || "");
@@ -510,7 +510,7 @@ export function saveProfileToMemory() {
     // the data actually belongs to; initProfile clears the flag when the next profile
     // loads, so it cannot leak into an untouched chat.
     if (_loadedProfileKey && key !== _loadedProfileKey) {
-        console.debug(`[Megumin-Suite] saveProfileToMemory declined: the profile in memory belongs to "${_loadedProfileKey}" but the active chat is now "${key}". Skipping the chat_metadata blocks and the settings write so this chat's data is not saved into another chat.`);
+        console.debug(`[Vellum] saveProfileToMemory declined: the profile in memory belongs to "${_loadedProfileKey}" but the active chat is now "${key}". Skipping the chat_metadata blocks and the settings write so this chat's data is not saved into another chat.`);
         return;
     }
 

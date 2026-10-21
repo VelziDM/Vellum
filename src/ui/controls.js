@@ -77,7 +77,7 @@ export function busy($btn, job, done) {
         if ($btn.prop("disabled")) return;
         const html = $btn.html();
         $btn.prop("disabled", true).html(`<i class="fa-solid fa-spinner fa-spin"></i> Working…`);
-        try { await job(); } catch (e) { console.error(e); toastr.error("That did not work. See the console for details.", "Megumin Suite"); }
+        try { await job(); } catch (e) { console.error(e); toastr.error("That did not work. See the console for details.", "Vellum"); }
         finally { $btn.prop("disabled", false).html(html); if (done) done(); }
     });
 }

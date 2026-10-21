@@ -82,7 +82,7 @@ export function debugProfileState() {
     const avatar = getRawAvatar();
     const chatId = getRawChatId();
     const settings = extension_settings?.[extensionName]?.profiles || {};
-    console.group('🔍 Megumin Profile Debug');
+    console.group('🔍 Vellum Profile Debug');
     console.log('context.chatId:', chatId);
     console.log('context.characterId:', context.characterId);
     console.log('context.groupId:', context.groupId);
@@ -160,7 +160,7 @@ export function cleanGhostProfiles() {
     // the other way is losing live group configs, which is not recoverable.
     const groupsLoaded = Array.isArray(context.groups) && context.groups.length > 0;
     if (!groupsLoaded && Object.keys(extension_settings[extensionName].profiles).some(k => k.startsWith('group_'))) {
-        console.debug("[Megumin-Suite] Ghost profile cleanup skipped every group_* profile this pass: SillyTavern reports no groups, which cannot be told apart from groups not having loaded yet. They will be reconsidered on a later startup once at least one group is visible.");
+        console.debug("[Vellum] Ghost profile cleanup skipped every group_* profile this pass: SillyTavern reports no groups, which cannot be told apart from groups not having loaded yet. They will be reconsidered on a later startup once at least one group is visible.");
     }
 
     let deletedCount = 0;
@@ -180,6 +180,6 @@ export function cleanGhostProfiles() {
 
     if (deletedCount > 0) {
         saveSettingsDebounced();
-        console.log(`[Megumin Suite] Garbage Collection: Cleaned up ${deletedCount} ghost profiles.`);
+        console.log(`[Vellum] Garbage Collection: Cleaned up ${deletedCount} ghost profiles.`);
     }
 }
