@@ -79,8 +79,9 @@ export function initProfile() {
         // entry is ever read, so in practice a reader who never switches engines
         // sees a single on/off.
         enhancedDialogue: {},
-        personality: "engine",
-        toggles: { ooc: false, control: false },
+        // The narrator voice is archived; the V7 module switches live on the
+        // Preset & Thinking tab and seed their own keys.
+        toggles: {},
         aiTags: [],
         aiGeneratedOptions: [],
         aiRule: "",
@@ -226,7 +227,7 @@ export function initProfile() {
     Object.keys(defaults).forEach(k => {
         if (localProfile[k] === undefined) localProfile[k] = defaults[k];
     });
-    if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
+    if (!localProfile.toggles) localProfile.toggles = {};
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
     if (!localProfile.storyConfig) localProfile.storyConfig = JSON.parse(JSON.stringify(defaults.storyConfig));
     Object.keys(defaults.storyConfig).forEach(k => {
@@ -292,6 +293,11 @@ export function initProfile() {
     // The chat-metadata copy is left alone: old chats keep loading, the entries
     // are inert.
     if (localProfile.state) delete localProfile.state;
+    // The Persona tab is archived: the narrator voice and the two protocol
+    // switches it owned.
+    delete localProfile.personality;
+    delete localProfile.toggles.ooc;
+    delete localProfile.toggles.control;
     // The Dynamic Ban List is gone. Its keys die here on the live profile; the
     // settings.json sweep is migrateUtilityPrefillFlag().
     delete localProfile.banList;

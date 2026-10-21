@@ -100,9 +100,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
       hint: "How characters act and what the model may decide on its own." },
     { key: "p6", trigger: "[[prompt6]]", structural: true, label: "Prompt 6", scope: "engine", group: "engine",
       hint: "The last of the engine's own instructions." },
-    { key: "main", trigger: "[[main]]", hidden: true, label: "Personality", scope: "auto", group: "engine",
-      where: "Persona",
-      hint: "Comes from the Persona tab. Blanked entirely on V6 and newer engines." },
     { key: "A1", trigger: "[[AI1]]", structural: true, hidden: true, label: "Model Acknowledgement 1", scope: "engine", group: "engine",
       advanced: true, hint: "A fake reply from the model, agreeing that it read the rules." },
     { key: "A2", trigger: "[[AI2]]", structural: true, hidden: true, label: "Model Acknowledgement 2", scope: "engine", group: "engine",
@@ -147,10 +144,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
     { key: null, trigger: "[[aiprompt]]", label: "Narration Style", scope: "auto", group: "live",
       where: "Writing Style",
       hint: "Your writing style, wrapped differently depending on the engine generation." },
-    { key: null, trigger: "[[OOC]]", label: "OOC Protocol", scope: "auto", group: "live", where: "Persona",
-      hint: "Out-of-character directives. Blanked on V8 and V9." },
-    { key: null, trigger: "[[control]]", label: "Control Protocol", scope: "auto", group: "live", where: "Persona",
-      hint: "Who may act for whom. Blanked on V8 and V9." },
 ];
 
 // ── Derived views. Never hand-maintain these ────────────────────────────────
@@ -178,6 +171,9 @@ export function meguminAllSlotTriggers() {
         // is an old misspelling of [[infoblockcurrent]] some presets carry.
         "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]",
         "[[blocks]]", "[[notebook]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]", "[[banlist]]",
+        // The Persona tab is archived: the narrator voice and the two protocol
+        // lines it owned.
+        "[[main]]", "[[OOC]]", "[[control]]",
         // The NPC Bank is gone too (its slot lines above were its only writers).
         "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]"]
         .forEach(t => out.add(t));

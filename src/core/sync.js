@@ -23,7 +23,6 @@ export const TAB_SYNC_KEYS = {
     // the profile you set it on and was off everywhere else, which is what a
     // setting that failed to write looks like to the reader.
     "Preset & Thinking": ["mode", "model", "cotEnabled", "thinkEffort", "customThinkEffort", "thinkingV2", "storyConfig", "enhancedDialogue"],
-    "Persona": ["personality", "toggles"],
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
     "Memory": ["memoryCore"],
     "Chomusuke": ["chomusuke"]

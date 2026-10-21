@@ -58,20 +58,17 @@ export function buildBaseDict(isTokenCount = false) {
 
     // 2. STANDARD STAGE SELECTIONS (Stage 2, 4, 5, 6)
 
-    // Personality (Stage 2) - Will be overwritten later if Custom Engine is active
-    const pData = hardcodedLogic.personalities.find(p => p.id === localProfile.personality);
-    dict["[[main]]"] = pData ? pData.content : "";
+    // The narrator voice (the Persona tab) is archived. [[main]] stays in the
+    // dictionary as an empty string so old presets carrying the tag rinse
+    // clean instead of leaking a literal "[[main]]" into the model's context.
+    dict["[[main]]"] = "";
     dict["[[AI1]]"] = "Understood."; // Default
     dict["[[AI2]]"] = "Understood."; // Default
-
-    if (localProfile.personality === "megumin") {
-        dict["[[AI1]]"] = "Fine i read the rules.";
-        dict["[[AI2]]"] = "OK i Understnd it.";
-    }
-
-    // Standard Toggles
-    if (localProfile.toggles.ooc) dict["[[OOC]]"] = hardcodedLogic.toggles.ooc.content;
-    if (localProfile.toggles.control) dict["[[control]]"] = hardcodedLogic.toggles.control.content;
+    // The OOC commentary and the "never write for {{user}}" control line lived
+    // on the Persona tab, which is archived. Both stay in the dictionary as
+    // empty strings so old presets carrying the tags rinse clean.
+    dict["[[OOC]]"] = "";
+    dict["[[control]]"] = "";
     // POV moved out of the style library and into the Story Config block.
     const povInjectionStr = "";
 
@@ -225,15 +222,8 @@ export function buildBaseDict(isTokenCount = false) {
         }
     }
 
-    // Wipe main persona for V6, V7, V8, and V9
-    if (localProfile.mode.includes("v6-dream-team") || isV7 || isModern) {
-        dict["[[main]]"] = "";
-    }
-
-    // Wipe Persona & Toggle tags entirely for V8, V9 and V10
+    // Wipe the acknowledgement lines for V8, V9 and V10
     if (isModern) {
-        dict["[[OOC]]"] = "";
-        dict["[[control]]"] = "";
         dict["[[AI1]]"] = "";
         dict["[[AI2]]"] = "";
     }

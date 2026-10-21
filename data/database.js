@@ -13,8 +13,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { modes } from "./modes/index.js";
-import { personalities } from "./personalities.js";
-import { toggles } from "./toggles.js";
 import { styles } from "./styles.js";
 import { styleTemplates } from "./styleTemplates.js";
 import { directStyles } from "./directStyles.js";
@@ -22,8 +20,6 @@ import { models } from "./cot/index.js";
 
 export const hardcodedLogic = {
     modes,
-    personalities,
-    toggles,
     styles,
     styleTemplates,
     directStyles,
@@ -31,4 +27,4 @@ export const hardcodedLogic = {
 };
 
 // Section-level exports, for code that wants one list without the whole library.
-export { modes, personalities, toggles, styles, styleTemplates, directStyles, models };
+export { modes, styles, styleTemplates, directStyles, models };

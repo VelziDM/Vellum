@@ -13,7 +13,6 @@ import { TAB_SYNC_KEYS, TABS_ALREADY_GLOBAL, meguminGlobalSyncMap, meguminIsTabS
 import { saveSettingsDebounced } from "../st.js";
 import { updateLiveTokenCount } from "../core/tokens.js";
 import { renderCoreAndCot } from "./tabs/coreAndCot.js";
-import { renderPersonality, personaTabInUse } from "./tabs/personality.js";
 import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
@@ -30,7 +29,6 @@ export const tabsUI = [
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
-    { id: "persona", group: "tools", title: "Persona", sub: "Define the personality.", icon: "fa-user-astronaut", render: renderPersonality, shown: personaTabInUse },
     { id: "settings", bottom: true, title: "Settings", sub: "Extension preferences and about info.", icon: "fa-gear", render: renderGlobalSettings }
 ];
 
@@ -132,7 +130,7 @@ function togglePhoneSheet(groupId, head) {
 }
 
 // Open/closed state, the highlight on a closed group that holds the open tab,
-// and the tabs that are hidden right now (Persona on presets that lock it).
+// and the tabs that are hidden right now.
 function refreshDockGroups() {
     const dotsContainer = $("#ps_dynamic_dots");
     tabsUI.forEach((t, i) => {
