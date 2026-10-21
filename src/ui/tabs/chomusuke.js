@@ -27,7 +27,6 @@ let setupOpen = null;
 // When the job runs: occasional, only when that job fires.
 const OCCASIONAL = [
     { key: "memory", title: "Memory", icon: "fa-memory", color: "#3b82f6", desc: "Summarises older chat for the long-term vault." },
-    { key: "banList", title: "Banned Phrases", icon: "fa-ban", color: "#ef4444", desc: "Finds the phrases the AI keeps repeating." },
     { key: "styleGen", title: "Writing Style generator", icon: "fa-wand-magic-sparkles", color: "#ec4899", desc: "Writes new writing styles from your tags." }
 ];
 
@@ -35,7 +34,7 @@ function ensureConfig() {
     if (!localProfile.chomusuke) {
         localProfile.chomusuke = {
             enabled: false, profileId: "", primaryProfileId: "",
-            features: { memory: true, banList: true, styleGen: true },
+            features: { memory: true, styleGen: true },
         };
     }
     const cfg = localProfile.chomusuke;

@@ -12,7 +12,7 @@
 
 import {
     activeWorldExtractRequest,
-    activeBanListChat, activeMemorySummarizationRequest, activeGenerationOrder,
+    activeMemorySummarizationRequest, activeGenerationOrder,
 } from "../core/activeRequests.js";
 import { extension_settings, getContext, saveSettingsDebounced, Popup, POPUP_TYPE } from "../st.js";
 import { extensionName } from "../core/constants.js";
@@ -34,7 +34,6 @@ function gs() {
  */
 export function backgroundJobNow() {
     if (activeWorldExtractRequest) return activeWorldExtractRequest.job || "world";
-    if (activeBanListChat) return "banlist";
     if (activeMemorySummarizationRequest) return "memory";
     if (activeGenerationOrder) return "style";
     return null;

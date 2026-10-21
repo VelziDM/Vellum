@@ -96,7 +96,7 @@ export function renderGlobalSettings(c) {
         <div class="mtab-toggle-row ${gs.bgPreview ? 'active' : ''}" id="gs_toggle_bg_preview" style="cursor: pointer;">
             <div class="toggle-info">
                 <div class="toggle-label"><i class="fa-solid fa-eye" style="color: var(--gold);"></i> Preview background prompts</div>
-                <div class="toggle-desc">Shows a background job's prompt (Memory, Notebook, World State…) in a popup before it is sent. You can change the text, or cancel that one job; the story carries on.</div>
+                <div class="toggle-desc">Shows a background job's prompt (Memory, the Writing Style generator…) in a popup before it is sent. You can change the text, or cancel that one job; the story carries on.</div>
             </div>
             <div class="ps-switch" style="${gs.bgPreview ? 'background: var(--gold);' : ''}"></div>
         </div>
@@ -114,22 +114,13 @@ export function renderGlobalSettings(c) {
             </div>
         </div>
     `);
-    $content.append(`
-        <div class="mtab-toggle-row ${gs.enableUtilityPrefill ? 'active' : ''}" id="gs_toggle_utility_prefill" style="cursor: pointer;">
-            <div class="toggle-info">
-                <div class="toggle-label"><i class="fa-solid fa-wand-sparkles" style="color: #10b981;"></i> Utility Prefills</div>
-                <div class="toggle-desc">Puts an opening &lt;think&gt; into the AI's mouth for background jobs. <b>Off by default:</b> Claude and several other APIs reject a prefill outright. Turn it on only if yours accepts one.</div>
-            </div>
-            <div class="ps-switch" style="${gs.enableUtilityPrefill ? 'background: #10b981;' : ''}"></div>
-        </div>
-    `);
 
     if (gs.loreInTasks === undefined) gs.loreInTasks = true;
     $content.append(`
         <div class="mtab-toggle-row ${gs.loreInTasks ? 'active' : ''}" id="gs_toggle_lore_tasks" style="cursor: pointer; ${gs.loreInTasks ? 'border-color: #a855f7;' : ''}">
             <div class="toggle-info">
                 <div class="toggle-label"><i class="fa-solid fa-book-atlas" style="color: #a855f7;"></i> Lorebooks in Background Jobs</div>
-                <div class="toggle-desc">Background jobs build their own prompt, so your lorebook entries don't reach them on their own. <b>On:</b> background jobs (the memory summary, the notebook's reader) get the entries your story has active right now. Your story replies use the lorebook as usual either way.</div>
+                <div class="toggle-desc">Background jobs build their own prompt, so your lorebook entries don't reach them on their own. <b>On:</b> background jobs (the memory summary, the Writing Style order) get the entries your story has active right now. Your story replies use the lorebook as usual either way.</div>
             </div>
             <div class="ps-switch" style="${gs.loreInTasks ? 'background: #a855f7;' : ''}"></div>
         </div>
@@ -221,7 +212,6 @@ export function renderGlobalSettings(c) {
         saveSettingsDebounced();
     });
     $content.find("#gs_bg_log").on("click", () => openBackgroundLog());
-    wireToggle("#gs_toggle_utility_prefill", "enableUtilityPrefill", "#10b981");
     wireToggle("#gs_toggle_lore_tasks", "loreInTasks", "#a855f7");
 
     $content.find("#gs_save_mode").on("change", function () {

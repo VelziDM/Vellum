@@ -10,7 +10,7 @@
 import { generateQuietPrompt, eventSource, event_types, extension_settings, isGenerating, getContext, online_status, waitUntilCondition } from "../st.js";
 import { extensionName, TARGET_PRESET_NAME } from "../core/constants.js";
 import { localProfile } from "../core/state.js";
-import { setActiveBanListChat, setActiveGenerationOrder } from "../core/activeRequests.js";
+import { setActiveGenerationOrder } from "../core/activeRequests.js";
 import { warnChomusuke } from "./chomusukeNotice.js";
 
 /**
@@ -134,7 +134,7 @@ export async function applyConnectionProfileById(profileId, timeoutMs = 10000) {
  * 
  * Guarantees primary connection profile restoration on completion or error.
  * 
- * @param {"memory"|"banList"|"styleGen"|"test"} featureKey
+ * @param {"memory"|"styleGen"|"test"} featureKey
  * @param {() => Promise<any>} task
  * @param {{ force?: boolean, jobs?: string[] }} [options]  jobs: what a failure
  *        message names (a combined call covers several); default [featureKey].
@@ -250,23 +250,6 @@ async function runOnWorker(featureKey, task, chomusuke, workerProfileId, jobs) {
     }
 }
 
-export async function analyzeSlopDirectly(chatText) {
-    setActiveBanListChat(chatText);
-    try {
-        let rawOutput = await generateQuietPrompt({ prompt: "___PS_BANLIST___", quietPrompt: "___PS_BANLIST___" });
-        return rawOutput.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-    } catch (e) {
-        console.error(`[${extensionName}] Ban List Analysis Failed:`, e);
-        return null;
-    } finally {
-        setActiveBanListChat(null);
-    }
-}
-
-
-export async function analyzeSlopWithPreset(chatText) {
-    return await runWithChomusuke("banList", () => analyzeSlopDirectly(chatText));
-}
 
 export async function useMeguminEngine(task, targetPreset = TARGET_PRESET_NAME) {
     const selector = $("#settings_preset_openai");

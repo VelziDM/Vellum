@@ -12,5 +12,4 @@ export {
 
 // Individual blocks, for code that wants one module's prompts without pulling in
 // the whole set.
-export { banListPrompts } from "./banList.js";
 export { memoryCorePrompts } from "./memoryCore.js";

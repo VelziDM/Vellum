@@ -25,7 +25,6 @@ export const TAB_SYNC_KEYS = {
     "Preset & Thinking": ["mode", "model", "cotEnabled", "thinkEffort", "customThinkEffort", "thinkingV2", "storyConfig", "enhancedDialogue"],
     "Persona": ["personality", "toggles"],
     "Writing Style": ["activeStyleId", "aiRule", "customStyles", "dnRatio"],
-    "Banned Phrases": ["banList", "banListBackend", "banListCustomPromptsEnabled", "banListCustomPrompts"],
     "Memory": ["memoryCore"],
     "Chomusuke": ["chomusuke"]
 };
@@ -146,21 +145,17 @@ export function syncPromptsGlobally(moduleName, dataKey, dataValue) {
     // Reduce it to its diff against DEFAULT_PROMPTS once here rather than per profile —
     // the value is identical for all of them, and initProfile fills the rest back in.
     let valueToStore = dataValue;
-    if (dataKey === 'customPrompts' || dataKey === 'banListCustomPrompts') {
+    if (dataKey === 'customPrompts') {
         valueToStore = meguminDiffPrompts(dataValue, moduleName);
     }
     Object.values(extension_settings[extensionName].profiles).forEach(prof => {
         const clonedValue = valueToStore !== null && typeof valueToStore === 'object' ? JSON.parse(JSON.stringify(valueToStore)) : valueToStore;
-        if (moduleName === 'banList') {
-            prof[dataKey] = clonedValue;
-        } else {
-            // A profile saved before this module existed has no container. Writing one
-            // bare key would create a half-built module whose other settings load as
-            // undefined. Skip it: its next load fills full defaults, and every sync
-            // after that reaches it normally.
-            if (!prof[moduleName]) return;
-            prof[moduleName][dataKey] = clonedValue;
-        }
+        // A profile saved before this module existed has no container. Writing one
+        // bare key would create a half-built module whose other settings load as
+        // undefined. Skip it: its next load fills full defaults, and every sync
+        // after that reaches it normally.
+        if (!prof[moduleName]) return;
+        prof[moduleName][dataKey] = clonedValue;
     });
     saveSettingsDebounced();
 }

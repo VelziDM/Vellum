@@ -285,19 +285,10 @@ export function buildBaseDict(isTokenCount = false) {
     dict["[[storyplan]]"] = "";
     dict["[[storytracker]]"] = "";
 
-    // 4. FINAL INJECTIONS (Banlist)
+    // 4. FINAL INJECTIONS
     // ponytail: image generation is cut out of this build. The anchors stay
     // blank rather than removed so old presets carrying the tags keep rinsing
     // clean instead of leaking a literal [[img1]] into the model's context.
-    if (localProfile.banList && localProfile.banList.length > 0) {
-        const banStr = localProfile.banList.map(b => `- ${b}`).join("\n");
-        const banCustom = localProfile.banListCustomPromptsEnabled ? localProfile.banListCustomPrompts : null;
-        const template = (banCustom && banCustom.injectionTemplate) || DEFAULT_PROMPTS.banList.injectionTemplate;
-        dict["[[banlist]]"] = template.replace('{{banItems}}', banStr);
-    } else {
-        dict["[[banlist]]"] = "";
-    }
-
     dict["[[img1]]"] = "";
     dict["[[img2]]"] = "";
 

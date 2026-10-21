@@ -130,9 +130,6 @@ export const MEGUMIN_SLOT_REGISTRY = [
     { key: "dnratio", trigger: "[[DNRATIO]]", label: "Dialogue / Narration Ratio", scope: "shared", group: "format",
       gate: GATE.dnratio, hint: "How much of a reply should be speech versus description.",
       fallback: () => "Ratio: Maintain a balance of 50% Dialogue and 50% Narration." },
-    { key: "banlist", trigger: "[[banlist]]", label: "Ban List (your additions)", scope: "shared", group: "format",
-      hint: "Added to the end of the built-in ban list. The built-in part lives in the preset and is not edited here.",
-      fallback: () => "" },
 
     // ── Computed from your settings. Overridable, but rarely worth it ────────
     { key: "count", trigger: "[[count]]", label: "Word Count", scope: "auto", group: "global",
@@ -181,7 +178,7 @@ export function meguminAllSlotTriggers() {
         // carrying these tags would leak them otherwise. [[infoblockcorrent]]
         // is an old misspelling of [[infoblockcurrent]] some presets carry.
         "[[infoblock]]", "[[cyoa]]", "[[npc_inner_chatter]]", "[[storytracker]]",
-        "[[blocks]]", "[[notebook]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]",
+        "[[blocks]]", "[[notebook]]", "[[infoblockcurrent]]", "[[infoblockcorrent]]", "[[banlist]]",
         // The NPC Bank is gone too (its slot lines above were its only writers).
         "[[npc_dossier]]", "[[npc_dossier2]]", "[[npc_updates]]", "[[npc list]]"]
         .forEach(t => out.add(t));

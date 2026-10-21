@@ -109,10 +109,6 @@ export function initProfile() {
         model: "cot-v1-english",
         userNotes: "",
         devOverrides: {},
-        banList: [],
-        banListBackend: "direct",
-        banListCustomPrompts: null,
-        banListCustomPromptsEnabled: false,
         customModes: [],
         thinkEffort: "unspecified",
         customThinkEffort: "100",
@@ -141,7 +137,6 @@ export function initProfile() {
             primaryProfileId: "",
             features: {
                 memory: true,
-                banList: true,
                 styleGen: true
             }
         },
@@ -233,7 +228,6 @@ export function initProfile() {
         if (localProfile[k] === undefined) localProfile[k] = defaults[k];
     });
     if (!localProfile.toggles) localProfile.toggles = defaults.toggles;
-    if (localProfile.banListCustomPromptsEnabled === undefined) localProfile.banListCustomPromptsEnabled = false;
     // Story Config (replaces the old standalone POV dropdown and the legacy word count)
     if (!localProfile.storyConfig) localProfile.storyConfig = JSON.parse(JSON.stringify(defaults.storyConfig));
     Object.keys(defaults.storyConfig).forEach(k => {
@@ -273,7 +267,6 @@ export function initProfile() {
         if (!localProfile.chomusuke.features) {
             localProfile.chomusuke.features = {
                 memory: true,
-                banList: true,
                 styleGen: true
             };
         }
@@ -300,6 +293,12 @@ export function initProfile() {
     // The chat-metadata copy is left alone: old chats keep loading, the entries
     // are inert.
     if (localProfile.state) delete localProfile.state;
+    // The Dynamic Ban List is gone. Its keys die here on the live profile; the
+    // settings.json sweep is migrateUtilityPrefillFlag().
+    delete localProfile.banList;
+    delete localProfile.banListBackend;
+    delete localProfile.banListCustomPrompts;
+    delete localProfile.banListCustomPromptsEnabled;
 
     // Prompt blocks are stored as a diff against DEFAULT_PROMPTS. Put the untouched keys
     // back before anything reads them. Runs after the patching above has guaranteed each

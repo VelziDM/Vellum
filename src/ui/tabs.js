@@ -16,7 +16,6 @@ import { renderCoreAndCot } from "./tabs/coreAndCot.js";
 import { renderPersonality, personaTabInUse } from "./tabs/personality.js";
 import { renderGlobalSettings, hasUnseenSettingsNotice } from "./tabs/globalSettings.js";
 import { renderStoryConfig } from "../features/storyconfig/ui.js";
-import { renderBanList } from "../features/banlist/ui.js";
 import { renderMemoryCore } from "../features/memory/index.js";
 import { renderChomusuke } from "./tabs/chomusuke.js";
 
@@ -31,7 +30,6 @@ export const tabsUI = [
     { id: "chomusuke", title: "Chomusuke", sub: "Your helper model: it does background work so the story model doesn't have to.", icon: "fa-cat", render: renderChomusuke },
     { id: "style", group: "setup", title: "Writing Style", sub: "Pick the prose voice the story is told in.", icon: "fa-pen-nib", render: renderStoryConfig },
     { id: "memory", group: "tools", title: "Memory", sub: "How the story remembers older parts of the chat.", icon: "fa-memory", render: renderMemoryCore },
-    { id: "banlist", group: "tools", title: "Banned Phrases", sub: "Find the phrases the AI keeps repeating and ban them.", icon: "fa-ban", render: renderBanList },
     { id: "persona", group: "tools", title: "Persona", sub: "Define the personality.", icon: "fa-user-astronaut", render: renderPersonality, shown: personaTabInUse },
     { id: "settings", bottom: true, title: "Settings", sub: "Extension preferences and about info.", icon: "fa-gear", render: renderGlobalSettings }
 ];

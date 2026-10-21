@@ -14,7 +14,6 @@
 
 export const CHOMUSUKE_JOB_NAMES = {
     memory: "the memory summary",
-    banList: "Banned Phrases",
     styleGen: "the writing style",
     test: "the test"
 };

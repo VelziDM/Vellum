@@ -15,10 +15,6 @@
 // setters. See the long note in state.js for why.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Dynamic Ban List: the chat text being scanned for repetition.
-export let activeBanListChat = null;
-export function setActiveBanListChat(v) { activeBanListChat = v; }
-
 // World State side-model extraction: { system, user, prefill } built by
 // renderWorldExtractPrompt. Set only for the length of one quiet generation.
 export let activeWorldExtractRequest = null;
@@ -36,7 +32,6 @@ export function setActiveGenerationOrder(v) { activeGenerationOrder = v; }
 // Used by the engine to suppress the prompt-preview popup during background work.
 export function isBackgroundGenerationActive() {
     return !!(
-        activeBanListChat ||
         activeMemorySummarizationRequest ||
         activeWorldExtractRequest ||
         activeGenerationOrder

@@ -1,7 +1,7 @@
 // The reusable prompt-editing card.
 //
-// Two tabs render one of these — Ban List
-// and Memory Core — so it is a shared UI component rather than any one feature's.
+// One tab renders this now — Memory Core — but it is still a shared UI
+// component rather than any one feature's.
 
 import { saveProfileToMemory } from "../core/profile.js";
 

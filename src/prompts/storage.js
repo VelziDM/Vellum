@@ -49,9 +49,6 @@ export function meguminSparsifyProfilePrompts(prof) {
             prof[mod].customPrompts = meguminDiffPrompts(prof[mod].customPrompts, mod);
         }
     }
-    if (prof.banListCustomPrompts) {
-        prof.banListCustomPrompts = meguminDiffPrompts(prof.banListCustomPrompts, 'banList');
-    }
     return prof;
 }
 
@@ -63,9 +60,6 @@ export function meguminRehydrateProfilePrompts(prof) {
         if (prof[mod] && prof[mod].customPrompts) {
             meguminFillPrompts(prof[mod].customPrompts, mod);
         }
-    }
-    if (prof.banListCustomPrompts) {
-        meguminFillPrompts(prof.banListCustomPrompts, 'banList');
     }
     return prof;
 }
@@ -87,7 +81,6 @@ export function meguminPromptBytes(prof) {
     for (const mod of MEGUMIN_PROMPT_MODULES) {
         if (prof[mod] && prof[mod].customPrompts) n += JSON.stringify(prof[mod].customPrompts).length;
     }
-    if (prof.banListCustomPrompts) n += JSON.stringify(prof.banListCustomPrompts).length;
     return n;
 }
 
