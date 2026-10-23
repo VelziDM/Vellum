@@ -51,6 +51,7 @@ import {
 } from "./src/features/memory/index.js";
 import { memUpdateSemanticQueryDebounced, memEnsureSemanticQueryFresh } from "./src/features/memory/vectordb.js";
 import { buildBaseDict } from "./src/engine/buildBaseDict.js";
+import { cleanAIOutput } from "./src/engine/chatText.js";
 import { handlePromptInjection } from "./src/engine/injection.js";
 import { initDraggableButton, updateCharacterDisplay, discoverDefaultImages } from "./src/ui/launcher.js";
 import { tabsUI, switchTab } from "./src/ui/tabs.js";
@@ -309,6 +310,23 @@ jQuery(async () => {
             });
             // REPLY ARRIVAL (reads, memory)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {
+                // Visible thinking is a leak, not a feature: providers without a
+                // reasoning channel write <think> into the message itself, and
+                // from there it is both shown to the reader and sent back as
+                // context on the next turn. The edit lands before the save;
+                // streaming has already drawn the raw text, so it is redrawn
+                // below when the block was actually there.
+                const received = getContext().chat?.[receivedId];
+                if (received?.mes) {
+                    const cleaned = cleanAIOutput(received.mes);
+                    if (cleaned !== received.mes) {
+                        received.mes = cleaned;
+                        // Streaming has already drawn the raw text by the time
+                        // this event fires; redraw it without the block.
+                        updateMessageBlock(receivedId, received);
+                    }
+                }
+
                 updateMemoryVisuals();
 
                 // AUTO-TRIGGER MEMORY CORE
@@ -356,33 +374,6 @@ jQuery(async () => {
                 saveProfileToMemory();
                 $("#prompt-slot-modal-overlay").fadeOut(200);
             }
-        });
-
-        // ── QUICK GEN BUTTON (stub) ──
-        // ponytail: image gen is out; the button stays visible so layout and muscle
-        // memory keep working, and says so when pressed. Reattach the igManualGenerate
-        // pipeline here when images return.
-        let att = 0;
-        const int = setInterval(() => {
-            if ($("#kazuma_quick_gen").length > 0) {
-                clearInterval(int);
-                return;
-            }
-            const b = `<div id="kazuma_quick_gen" class="interactable" title="Visualize Last Scene" style="cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; margin-right: 5px; color: var(--gold);"><i class="fa-solid fa-image fa-lg"></i></div>`;
-            let t = $("#send_but_sheld");
-            if (!t.length) t = $("#send_textarea");
-            if (t.length) {
-                t.attr("id") === "send_textarea" ? t.before(b) : t.prepend(b);
-                clearInterval(int);
-            }
-            att++;
-            if (att > 10) clearInterval(int);
-        }, 1000);
-
-        $(document).on("click", "#kazuma_quick_gen", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            toastr.info("Image generation is not available in this build.", "Megumin Suite", { timeOut: 2000 });
         });
 
         // ── FLUSH PENDING SAVES ON TAB HIDE / PAGE CLOSE ──

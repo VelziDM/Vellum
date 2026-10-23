@@ -81,3 +81,26 @@ export function busy($btn, job, done) {
         finally { $btn.prop("disabled", false).html(html); if (done) done(); }
     });
 }
+
+/** Plaintext modal using extension's existing CSS classes. */
+export function showModal({ title, text }) {
+    const $overlay = $(`
+        <div class="ptx-modal-overlay">
+            <div class="ptx-modal">
+                <div class="ptx-modal-header">
+                    <span>${esc(title)}</span>
+                    <button type="button" class="ptx-modal-close"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="ptx-modal-body" style="white-space: pre-wrap;">${esc(text)}</div>
+            </div>
+        </div>
+    `);
+    const close = () => $overlay.remove();
+    $overlay.find(".ptx-modal-close, .ptx-modal-overlay").on("click", e => {
+        if (e.target === e.currentTarget) close();
+    });
+    $(document).on("keydown.modal", e => { if (e.key === "Escape") close(); });
+    $overlay.on("remove", () => $(document).off("keydown.modal"));
+    $("body").append($overlay);
+    $overlay.find(".ptx-modal-close").trigger("focus");
+}

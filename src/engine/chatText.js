@@ -15,8 +15,10 @@ export { escapeRegex } from "../utils/regex.js";
 
 export function cleanAIOutput(text) {
     if (!text) return "";
-    const re = new RegExp("(<disclaimer>.*?</disclaimer>)|(<guifan>.*?</guifan>)|(<danmu>.*?</danmu>)|(<options>.*?</options>)|```start|```end|<done>|`<done>`|(.*?</think(ing)?>(\\n)?)|(<think(ing)?>[\\s\\S]*?</think(ing)?>(\\n)?)", "gs");
-    return text.replace(re, "").trim();
+    return text
+        .replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>\s*/gi, "")
+        .replace(/^[\s\S]*?<\/think(?:ing)?>\s*/i, "")
+        .trim();
 }
 
 // MASTER CHAT CLEANER: Removes Megumin UI blocks, thoughts, and raw HTML from chat text.

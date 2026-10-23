@@ -116,8 +116,8 @@ export const MEGUMIN_SLOT_REGISTRY = [
     // ── Shared fragments: one value, every engine ────────────────────────────
     { key: "userControl", trigger: "[[user]]", label: "Never Write For {{user}}", scope: "shared", group: "systems",
       gate: GATE.notCoWriter,
-      hint: "Sent on every engine except the Co-writer variants, which are built to write {{user}}. It lands in the preset's numbered final reminder list, so keep it written as a numbered line.",
-      fallback: () => "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for." },
+      hint: "Sent on every engine except the Co-writer variants, which are built to write {{user}}. It lands in the preset's final reminder list, so keep it written as a standalone rule.",
+      fallback: () => "The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for." },
 
     // ── Filled live by a feature. Nothing to edit ────────────────────────────
     { key: null, trigger: "[[long-Memory]]", label: "Long-term Memory", scope: "auto", group: "live", where: "Memory",

@@ -73,18 +73,6 @@ async function buildPromptInjection(data, type) {
 
     const dict = buildBaseDict();
 
-    // --- THE ENVELOPE IS THE ONLY WAY IN ---
-    // [[blocks]] carries every tracker block now. The per-block anchors are
-    // blanked unconditionally: leaving them populated would emit each block
-    // twice, once loose and once wrapped. A preset that has not been given a
-    // [[blocks]] anchor emits no blocks at all, which is the intended, visible
-    // failure rather than a silent fallback to a format nothing renders.
-    //
-    // [[npc_dossier]] is deliberately NOT blanked: it is the dossier RULES, not
-    // the block, and the envelope's slot line refers back to them.
-    ["[[infoblock]]", "[[infoblock2]]", "[[npc_inner_chatter]]", "[[npc_inner_chatter2]]",
-        "[[storytracker]]", "[[storytracker2]]", "[[npc_dossier2]]"].forEach(t => { dict[t] = ""; });
-
     // Hide blocks from the AI (plan 8): the blocks system is gone. Old replies in
     // the chat still carry the envelope and its children; strip them so the model
     // never reads its own old cards. Done before the placeholders are filled, so

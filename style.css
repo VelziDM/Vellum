@@ -5520,3 +5520,110 @@
 @media (max-width: 560px) {
     .meg-nbc-row { grid-template-columns: 1fr; gap: 1px; }
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   Plaintext modal (View buttons on CoT cards / preset cards)
+   ────────────────────────────────────────────────────────────────── */
+.ptx-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    animation: ptx-modal-fade-in 0.15s ease-out;
+}
+
+@keyframes ptx-modal-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ptx-modal {
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: ptx-modal-slide-up 0.2s ease-out;
+}
+
+@keyframes ptx-modal-slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.ptx-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.ptx-modal-header span {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.ptx-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.ptx-modal-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+.ptx-modal-body {
+    padding: 18px;
+    overflow-y: auto;
+    max-height: 65vh;
+    white-space: pre-wrap;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+/* View button on cards */
+.igx-btn-view {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.mtab-eng-card:hover .igx-btn-view,
+.ptx-cot:hover .igx-btn-view {
+    opacity: 1;
+}
+
+.igx-btn-view:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}

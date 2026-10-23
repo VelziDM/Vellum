@@ -77,8 +77,6 @@ export function initProfile() {
         toggles: {},
         model: "cot-prometheus-english",
         customModes: [],
-        thinkEffort: "unspecified",
-        customThinkEffort: "100",
         // ponytail: image gen removed — the key is simply not created any more.
         // Old profiles may still carry an imageGen object; every reader left is
         // null-guarded, and the dead object is inert.

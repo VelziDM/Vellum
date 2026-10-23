@@ -12,9 +12,10 @@
 //             config, the memory blocks)
 //   dead      nothing fills it any more, and it is written as "" so a preset
 //             that still carries the tag rinses clean instead of leaking a
-//             literal "[[whatever]]" into the model's context. Every dead tag
-//             is also on the strip list in data/slots.js, because a tag that is
-//             not in the dictionary at all survives the fill pass untouched.
+//             literal "[[whatever]]" into the model's context. The dead set is
+//             the strip list in data/slots.js: a tag that is not in the
+//             dictionary at all survives the fill pass untouched, so the two
+//             lists are the same list.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { extension_settings } from "../st.js";
@@ -24,7 +25,7 @@ import { isCoWriterEngine } from "../core/engines.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { hardcodedLogic } from "../../data/database.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
-import { meguminOverridableSlots, meguminSlotIsLive } from "../../data/slots.js";
+import { meguminAllSlotTriggers, meguminOverridableSlots, meguminSlotIsLive } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
 
 export function buildBaseDict(isTokenCount = false) {
@@ -34,19 +35,15 @@ export function buildBaseDict(isTokenCount = false) {
     const allAvailableModes = [...hardcodedLogic.modes, ...(extension_settings[extensionName].customModes || [])];
     const activeEngine = allAvailableModes.find(m => m.id === localProfile.mode);
 
-    // Tags of features that are gone. Blank, never dropped: see the header.
-    const dead = [
-        "[[count]]", "[[DNRATIO]]", "[[img1]]", "[[img2]]",
-        "[[main]]", "[[OOC]]", "[[control]]", "[[AI1]]", "[[AI2]]",
-        "[[storyplan]]", "[[storytracker]]",
-        "[[v9_lean_min]]", "[[v9_lean_max]]", "[[v9_full_min]]", "[[v9_full_max]]"
-    ];
-    dead.forEach(t => { dict[t] = ""; });
+    // Every trigger the injector knows, blanked before anything fills its own
+    // slot. A hand-written list lived here and drifted: 23 strip-listed tags
+    // were never blanked, and only the strip pass kept them from leaking.
+    meguminAllSlotTriggers().forEach(t => { dict[t] = ""; });
 
     // 2. STANDARD STAGE SELECTIONS (Stage 2, 4, 5, 6)
 
     // The narrator voice (the Persona tab) is archived, and so are the two
-    // protocol lines it owned. Their tags are in the dead list above.
+    // protocol lines it owned. Their tags are on the strip list.
 
     // Stage 6 Defaults (CoT Framework & Language)
     const modData = hardcodedLogic.models.find(m => m.id === localProfile.model);
@@ -85,7 +82,7 @@ export function buildBaseDict(isTokenCount = false) {
         // value still wins, exactly like every other shared slot.
         dict["[[user]]"] = isCoWriterEngine(activeEngine)
             ? ""
-            : "5. The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for.";
+            : "The response does not speak, think, feel, or act for {{user}}, and it shows everything {{user}} reached for.";
 
         // Slot overrides, driven by MEGUMIN_SLOT_REGISTRY.
         //
@@ -105,17 +102,7 @@ export function buildBaseDict(isTokenCount = false) {
         });
     }
 
-    // NEW: Inject Thinking Effort to the absolute top of whatever [[COT]] is currently active
-    // Not for a Thinking Cap: it sets its own length, and a word count makes the
-    // models it is for count and redraft.
-    let effort = localProfile.thinkEffort || "unspecified";
-    const isCap = /^cot-.+-cap-/.test(localProfile.model || "");
-    if (effort !== "unspecified" && dict["[[COT]]"] && !isCap) {
-        let words = effort === "custom" ? (localProfile.customThinkEffort || "100") : effort;
-        dict["[[COT]]"] = `Your Thinking must not be more than ${words} words.\n\n` + dict["[[COT]]"];
-    }
-
-    // [[THINK]] macro.
+// [[THINK]] macro.
     //
     // [[COT]] never travels under its own tag. The reasoning script is wrapped
     // in think tags and delivered inside [[THINK]], which is the tag the preset
@@ -126,9 +113,7 @@ export function buildBaseDict(isTokenCount = false) {
     // an edited wrapper was silently discarded: the override pass runs far
     // above, and this line overwrote whatever it had put there.
     if (localProfile.cotEnabled !== false && dict["[[COT]]"]) {
-        const defaultWrapper = localProfile.thinkingV2
-            ? "<think>\n<think>\n<think>\n{Thinking}\n</think>"
-            : "<think>\n{Thinking}\n</think>";
+        const defaultWrapper = "<?xml version=\"1.0\"?>\n<response>\n  <thinking>\n    {Thinking}\n  </thinking>\n  <output>\n    {Thinking}\n  </output>\n</response>";
 
         let wrapper = (dict["[[THINK]]"] && dict["[[THINK]]"].trim() !== "")
             ? dict["[[THINK]]"]
@@ -143,11 +128,7 @@ export function buildBaseDict(isTokenCount = false) {
         dict["[[COT]]"] = "";
     } else {
         dict["[[THINK]]"] = "";
-    }
-
-    if (localProfile.thinkingV2 && dict["[[prefill]]"]) {
-        dict["[[prefill]]"] = dict["[[prefill]]"].replace(/\n<think>[\s\S]*/, "\n<think>\n<think>");
-    }
+}
 
     // Resolve early-evaluated tokens inside all other strings to prevent them from being missed and then cleaned up
     const earlyTokens = ["[[count]]", "[[DNRATIO]]", "[[img2]]"];
