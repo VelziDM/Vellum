@@ -24,6 +24,7 @@ import { localProfile } from "../core/state.js";
 import { isCoWriterEngine } from "../core/engines.js";
 import { DEFAULT_PROMPTS } from "../prompts/index.js";
 import { hardcodedLogic } from "../../data/database.js";
+import { meguminResolveCot } from "../../data/cot/index.js";
 import { memGetRelevantVaultEntries } from "../features/memory/index.js";
 import { meguminAllSlotTriggers, meguminOverridableSlots, meguminSlotIsLive } from "../../data/slots.js";
 import { resolveSlot } from "../core/sharedFragments.js";
@@ -46,7 +47,7 @@ export function buildBaseDict(isTokenCount = false) {
     // protocol lines it owned. Their tags are on the strip list.
 
     // Stage 6 Defaults (CoT Framework & Language)
-    const modData = hardcodedLogic.models.find(m => m.id === localProfile.model);
+    const modData = meguminResolveCot(localProfile.model);
     if (localProfile.cotEnabled !== false && modData) {
         dict["[[COT]]"] = modData.content;
         if (modData.prefill) dict["[[prefill]]"] = modData.prefill;

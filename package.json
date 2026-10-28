@@ -6,6 +6,12 @@
   "description": "Vellum — a SillyTavern UI extension. A personal fork of Megumin Suite.",
   "license": "AGPL-3.0",
   "scripts": {
-    "check": "node --check index.js && find src data -name '*.js' -exec node --check {} +"
+    "check": "node --check index.js && find src data -name '*.js' -exec node --check {} +",
+    "test:plan": "node tools/run-test-sequence.js",
+    "test:verify": "node tools/verify-test-runs.js",
+    "test:all": "npm run test:plan && npm run test:verify"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }

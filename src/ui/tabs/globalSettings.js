@@ -61,18 +61,7 @@ export function renderGlobalSettings(c) {
     $content.append(`
         <div class="mtab-panel gs-about" style="margin: 0;">
             <div class="gs-about-title">Vellum</div>
-            <div class="gs-about-by">A personal fork of Megumin Suite</div>
-
-            <div class="gs-link-grid">
-                <a class="gs-link" href="https://github.com/Arif-salah/Megumin-Suite" target="_blank" rel="noopener noreferrer">
-                    <i class="fa-brands fa-github"></i>
-                    <span><b>Original project</b><small>Megumin Suite — all credit to its author</small></span>
-                </a>
-                <a class="gs-link" href="https://github.com/VelziDM/Megumin-Suite-Beta" target="_blank" rel="noopener noreferrer">
-                    <i class="fa-brands fa-github"></i>
-                    <span><b>Branch it started from</b><small>the VelziDM beta branch</small></span>
-                </a>
-            </div>
+            <div class="gs-about-by">Personal fork — no external dependencies</div>
         </div>
     `);
 

@@ -72,7 +72,7 @@ function meguminModeById(id) {
     if (found) return found;
     try {
         const store = globalThis.extension_settings || {};
-        const bucket = store["Megumin-Suite"] || store["Megumin-Suite-Beta"] || {};
+        const bucket = store["Vellum"] || {};
         return (bucket.customModes || []).find(m => m.id === id) || null;
     } catch { return null; }
 }

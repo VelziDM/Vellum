@@ -12,7 +12,7 @@ import { extensionName } from "../../core/constants.js";
 import { localProfile } from "../../core/state.js";
 import { saveProfileToMemory } from "../../core/profile.js";
 import { hardcodedLogic } from "../../../data/database.js";
-import { meguminCotForMode, models } from "../../../data/cot/index.js";
+import { meguminCotForMode, meguminResolveCot, models } from "../../../data/cot/index.js";
 import { card as pageCard, switchRow, esc, showModal } from "../controls.js";
 
 // ── Page state, kept while SillyTavern is open ───────────────────────────
@@ -28,7 +28,7 @@ export function renderCoreAndCot(c) {
 
     if (localProfile.cotEnabled === undefined) localProfile.cotEnabled = true;
 
-    const cotEntry = models.find(m => m.id === localProfile.model);
+    const cotEntry = meguminResolveCot(localProfile.model);
     const cotLabel = cotEntry?.label || "None";
 
     // ── Header + summary ──

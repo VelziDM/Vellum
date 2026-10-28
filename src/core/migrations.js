@@ -13,39 +13,6 @@
 import { extension_settings, saveSettingsDebounced } from "../st.js";
 import { extensionName } from "./constants.js";
 
-// The extension was renamed. Everything it stores lives under one key of
-// extension_settings, and that key was the old name -- so a rename that did not
-// carry the data would leave every profile, every memory and every style
-// behind under a key nothing reads any more.
-//
-// The old key is written out in full on purpose: the constant no longer holds
-// it, and a rename is exactly the moment to stop deriving one from the other.
-const OLD_EXTENSION_NAME = "Megumin-Suite-Beta";
-
-/**
- * Move the stored settings to the new key. Runs first, before every other
- * migration, because they all read the current key.
- */
-export function migrateExtensionName() {
-    const store = extension_settings;
-    if (!store) return;
-    const old = store[OLD_EXTENSION_NAME];
-    if (!old) return;
-
-    if (!store[extensionName]) {
-        store[extensionName] = old;
-        delete store[OLD_EXTENSION_NAME];
-        saveSettingsDebounced();
-        console.log(`[${extensionName}] Settings moved from "${OLD_EXTENSION_NAME}" to "${extensionName}".`);
-        return;
-    }
-
-    // Both keys exist: the new one was already written by a later run, so the
-    // old one is stale. It is left in place rather than merged -- merging two
-    // profile stores field by field is where data gets lost.
-    console.warn(`[${extensionName}] Both "${OLD_EXTENSION_NAME}" and "${extensionName}" hold settings. The old one is left untouched; the current one is used.`);
-}
-
 export function cleanLegacySettings() {
     if (!extension_settings[extensionName] || !extension_settings[extensionName].profiles) return;
     let didClean = false;

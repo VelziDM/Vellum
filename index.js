@@ -31,7 +31,7 @@ import {
 
 import { DEFAULT_PROMPTS } from "./src/prompts/index.js";
 import { meguminActiveDataIdentity, getCharacterKey, getRawAvatar, cleanGhostProfiles } from "./src/core/keys.js";
-import { migrateExtensionName, cleanLegacySettings, migrateRemovedFeatureKeys, dropLookResidue } from "./src/core/migrations.js";
+import { cleanLegacySettings, migrateRemovedFeatureKeys, dropLookResidue } from "./src/core/migrations.js";
 import { meguminCompactStoredPrompts } from "./src/prompts/storage.js";
 import { chomusukeSessionPromise } from "./src/engine/tasks.js";
 import { renderPromptEditor } from "./src/ui/promptEditor.js";
@@ -118,9 +118,7 @@ import { tabsUI, switchTab } from "./src/ui/tabs.js";
 
 jQuery(async () => {
     try {
-        // First: the settings live under a key named after the extension, and
-        // the extension was renamed. Everything below reads the current key.
-        migrateExtensionName();
+        // First: the settings live under a key named after the extension.
         cleanLegacySettings();
         migrateRemovedFeatureKeys();
         dropLookResidue();
@@ -306,7 +304,7 @@ jQuery(async () => {
                     session.then(() => false),
                     new Promise(r => setTimeout(() => r(true), 30000))
                 ]);
-                if (gaveUp) console.warn("[Megumin-Suite] Send guard: Chomusuke still busy after 30s; sending anyway.");
+                if (gaveUp) console.warn("[Vellum] Send guard: Chomusuke still busy after 30s; sending anyway.");
             });
             // REPLY ARRIVAL (reads, memory)
             eventSource.on(event_types.MESSAGE_RECEIVED, async (receivedId, receivedType) => {

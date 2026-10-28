@@ -20,6 +20,7 @@ import { fireRefreshHook, REFRESH } from "./refreshHooks.js";
 import { meguminSparsifyProfilePrompts, meguminRehydrateProfilePrompts } from "../prompts/storage.js";
 import { DEFAULT_PROMPTS } from "../prompts/defaults.js";
 import { hardcodedLogic } from "../../data/database.js";
+import { DEFAULT_COT_ID } from "../../data/cot/index.js";
 import { escapeRegex } from "../utils/regex.js";
 
 // Last chat_metadata stamp written, so an unchanged profile doesn't re-save.
@@ -75,7 +76,7 @@ export function initProfile() {
         // The narrator voice is archived; the V7 module switches live on the
         // Preset & Thinking tab and seed their own keys.
         toggles: {},
-        model: "cot-prometheus-english",
+        model: DEFAULT_COT_ID,
         customModes: [],
         // ponytail: image gen removed — the key is simply not created any more.
         // Old profiles may still carry an imageGen object; every reader left is
@@ -129,7 +130,7 @@ export function initProfile() {
         const tmpl = extension_settings[extensionName].profiles["default"];
         const knownIds = hardcodedLogic.modes.map(m => m.id);
         if (tmpl.mode && !knownIds.includes(tmpl.mode)) tmpl.mode = knownIds[0] || "prometheus";
-        if (tmpl.model && !hardcodedLogic.models.some(m => m.id === tmpl.model)) tmpl.model = defaults.model;
+        if (!tmpl.model || !hardcodedLogic.models.some(m => m.id === tmpl.model)) tmpl.model = DEFAULT_COT_ID;
     }
 
     // ── PROFILE LOADING: Try exact keys first, then fuzzy match all stored chat-level keys ──
@@ -238,8 +239,8 @@ export function initProfile() {
     if (localProfile.mode && !knownModes.includes(localProfile.mode) && !knownCustomModes.includes(localProfile.mode)) {
         localProfile.mode = knownModes[0] || "prometheus";
     }
-    if (localProfile.model && !hardcodedLogic.models.some(m => m.id === localProfile.model)) {
-        localProfile.model = defaults.model;
+    if (!localProfile.model || !hardcodedLogic.models.some(m => m.id === localProfile.model)) {
+        localProfile.model = DEFAULT_COT_ID;
     }
     delete localProfile.worldState;
     // The blocks system is gone. Old profiles carried the stack order, the
